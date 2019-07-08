@@ -5,6 +5,7 @@ let config = {
     height: 240,
     parent: gamediv,
     pixelArt: true,
+    roundPixels: true,
     zoom: 2,
     physics: {
         default: 'arcade',
