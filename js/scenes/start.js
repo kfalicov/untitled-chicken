@@ -1,4 +1,4 @@
-import { Chunk } from "../terrain";
+import { Chunk } from "../terrain.js";
 
 export class player extends Phaser.Scene{
     constructor()
