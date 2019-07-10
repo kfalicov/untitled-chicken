@@ -18,23 +18,24 @@ export class Chunk{
                 for (var y = 0; y < this.scene.chunkSize; y++) {
                     var tileX = (this.x * (this.scene.chunkSize * this.scene.tileSize)) + (x * this.scene.tileSize);
                     var tileY = (this.y * (this.scene.chunkSize * this.scene.tileSize)) + (y * this.scene.tileSize);
-                    var perlinValue = noise.perlin2(tileX/100, tileY/100);
+                    var perlinValue = noise.perlin2(tileX/100, tileY/200);
                     var key="";
                     var animationKey = "";
-                    if(perlinValue>=0.2 && perlinValue < 0.25){
-                        key = "grass_01";
-                    }else if(perlinValue >0.5 && perlinValue <0.55){
-                        key= "grass_02";
-                    }
-                    else if(perlinValue > 0.6 && perlinValue<0.7){
-                        key="grass_03";
-                    }
-                    else if(perlinValue > 0.8 && perlinValue<0.95){
+                    
+                    if(perlinValue > 0 && perlinValue<=0.005){
                         key="grass_04";
+                    }else if(perlinValue > 0.25 && perlinValue <= 0.3){
+                        key = "grass_02";
+                    }else if(perlinValue > 0.3 && perlinValue <= 0.35){
+                        key= "grass_01";
+                    }
+                    else if(perlinValue > 0.005 && perlinValue<0.015){
+                        key="grass_03";
                     }else{
                         key="grass_00";
                     }
                     var tile = new Tile(this.scene, tileX, tileY, key);
+                    //tile.setTint(perlinValue*0xffffff);
                     this.tiles.add(tile);
                 }
             }

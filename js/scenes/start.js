@@ -106,6 +106,15 @@ export class player extends Phaser.Scene{
 
         this.walking=false;
 
+        let zoom = 2;
+        let zoomlevels = [0.25, 0.5, 1, 2, 4, 8]
+        let q = this.input.keyboard.addKey('Q');
+        q.on('down',()=>{
+            zoom = (zoom+1)%zoomlevels.length;
+            console.log(zoom);
+            this.cameras.main.zoom=zoomlevels[zoom];
+        }, this);
+
         this.input.on('pointermove', (pointer)=>{
             //console.log(pointer.x-160, pointer.y-120);
             this.cameras.main.setFollowOffset((-pointer.x+160)/6, (-pointer.y+120)/6);
