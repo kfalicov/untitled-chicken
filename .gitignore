@@ -1,3 +1,4 @@
 
 js/defs/phaser.d.ts
 js/jsconfig.json
+*.asd

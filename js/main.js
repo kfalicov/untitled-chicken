@@ -1,4 +1,4 @@
-import {testScene} from './scenes/start.js';
+import {player} from './scenes/start.js';
 let config = {
     type: Phaser.WEBGL,
     width: 320,
@@ -15,7 +15,7 @@ let config = {
         }
     },
     //scene: ClassicMode //use this to test specific scenes directly
-    scene: [testScene]
+    scene: [player]
 };
 
 let game = new Phaser.Game(config);
