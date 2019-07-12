@@ -2,3 +2,8 @@
 js/defs/phaser.d.ts
 js/jsconfig.json
 *.asd
+*.map
+*.tlc
+assets/terrain/chicken tileset_16#files.txt
+*.tlc
+*.tlc
