@@ -1,9 +1,13 @@
 import { Chunk } from "../terrain.js";
+import { GrayscalePipeline, DistortPipeline, BloomPipeline } from "../shader/pipelines.js";
+import { Chicken } from "../chicken.js";
 
-export class player extends Phaser.Scene{
+let gameScale=2;
+
+export class Scene extends Phaser.Scene{
     constructor()
     {
-        super('Player');
+        super('Scene');
     }
     preload(){
         this.load.image('shadow', 'assets/chicken/shadow.png');
@@ -17,6 +21,7 @@ export class player extends Phaser.Scene{
         //this.load.image('tiles', 'assets/grass_tiles.png');
         this.load.spritesheet('tiles_16', 'assets/terrain/16_terrain.png', { frameWidth: 16, frameHeight: 16 })
         this.load.spritesheet('tiles', 'assets/tiles.png', { frameWidth: 32, frameHeight: 32 });
+        this.load.glsl({key:'distort', shaderType:'fragment', url:'js/shader/distort.glsl'});
     }
     create(){
         /**
@@ -31,11 +36,24 @@ export class player extends Phaser.Scene{
         let chunkdiam = (2*this.chunkRadius)+1;
         let tilesdiam = chunkdiam*this.chunkSize;
 
+        //let duck = new Chicken(this, 40,40,'shadow');
+        //duck.setDepth(4);
+        //console.log(duck);
+        //this.duck=duck;
+
         //this.map = this.make.tilemap({tileWidth:32, tileHeight:32, width: tilesdiam, height: tilesdiam});
         //this.tileset = this.map.addTilesetImage('tiles');
         //this.groundlayer = this.map.createBlankDynamicLayer('ground',this.tileset, -this.chunkRadius*this.chunkSize*this.tileSize, -this.chunkRadius*this.chunkSize*this.tileSize );
 
-        
+        this.distortPipeline = this.sys.game.renderer.pipelines['Distort'];
+        if(!this.distortPipeline){
+            this.distortPipeline = this.game.renderer.addPipeline('Distort', new DistortPipeline(this.game));
+        }
+        this.bloomPipeline = this.sys.game.renderer.pipelines['Bloom'];
+        if(!this.bloomPipeline){
+            this.bloomPipeline = this.game.renderer.addPipeline('Bloom', new BloomPipeline(this.game));
+        }
+       // this.cameras.main.setRenderToTexture('Distort');
         //groundlayer.putTilesAt(newChunk.arr,4,4);
         //console.log(newChunk.arr);
         let chunkoffset=this.chunkSize*this.chunkRadius;
@@ -109,13 +127,16 @@ export class player extends Phaser.Scene{
         
         chicken.depth = 2;
 
+        this.cameras.main.setSize(320,240);
+        
+        this.cameras.main.zoom=1;
         this.cameras.main.startFollow(chicken);
         this.cameras.main.setLerp(0.1,0.1);
         this.cameras.main.roundPixels=true;
+        this.cameras.main.setRenderToTexture('Distort');
+        //rendercam.setPipeline('distort');
         
-        //this.cameras.main.zoom=0.1;
-        //let chicken = this.physics.add.sprite(32,32, 'standsheet').play('walk');
-        //chicken.setDamping(true);
+        //this.cameras.main.zoom=2;
         chicken.body.useDamping = true;
         chicken.body.setMaxSpeed(100);
         chicken.body.drag.set(0.9, 0.9);
@@ -134,22 +155,23 @@ export class player extends Phaser.Scene{
 
         this.walking=false;
 
-        let zoom = 2;
-        let zoomlevels = [0.25, 0.5, 1, 2, 4, 8]
         let q = this.input.keyboard.addKey('Q');
+        let intensity = 0;
         q.on('down',()=>{
-            zoom = (zoom+1)%zoomlevels.length;
-            console.log(zoom);
-            this.cameras.main.zoom=zoomlevels[zoom];
+            intensity=(intensity+1)%2;
+            this.distortPipeline.setFloat1('intensity',intensity);
+            console.log(intensity);
+            //this.cameras.main.shake();
         }, this);
 
         this.input.on('pointermove', (pointer)=>{
             //console.log(pointer.x-160, pointer.y-120);
-            this.cameras.main.setFollowOffset((-pointer.x+160)/6, (-pointer.y+120)/6);
+            this.cameras.main.setFollowOffset((-pointer.x+this.cameras.main.x+160)/6, (-pointer.y+this.cameras.main.y+120)/6);
         }, this);
 
         this.input.on('pointerdown', function(pointer){
            this.pecking=true;
+           //this.duck.peck();
         }, this);
         
         body.on('animationcomplete', (animation, frame)=>{
@@ -168,6 +190,7 @@ export class player extends Phaser.Scene{
         
         this.chicken = chicken;
         //console.log(chicken.list)
+        this.scene.launch('RenderScene');
     }
 
     getChunk(x, y){
@@ -184,6 +207,8 @@ export class player extends Phaser.Scene{
     update(time, delta){
         this.updateChicken(time, delta);
         this.updateChunks(time, delta);
+        this.distortPipeline.setFloat1('time', time/10);
+        
     }
     updateChicken(time,delta){
         let accelval = 1500;
@@ -202,6 +227,7 @@ export class player extends Phaser.Scene{
             forcex+=accelval;
         }
         this.chicken.body.setAcceleration(forcex, forcey);
+        //this.duck.body.setAcceleration(forcex, forcey);
         //let flip = Math.max(this.chicken.x-this.input.activePointer.x, 0);
         //let flip = Math.max(this.chicken.x-this.cameras.main.midPoint.x, 0);
         let chickenXreltoCenter = this.chicken.x-this.cameras.main.midPoint.x;
@@ -209,6 +235,7 @@ export class player extends Phaser.Scene{
         
         let flip = Math.max(chickenXreltoCenter-mouseXreltoCenter, 0);
         this.chicken.each(entity => entity.flipX=flip);
+        //this.duck.setFlip(flip);
         
         let body = this.chicken.list[1];
         let head = this.chicken.list[2];
@@ -343,5 +370,23 @@ export class player extends Phaser.Scene{
             }
             this.currentChunk = {x: snappedChunkX, y: snappedChunkY};
         }
+    }
+}
+
+export class RenderScene extends Phaser.Scene{
+    constructor(){
+        super('RenderScene');
+    }
+    preload(){
+
+    }
+    create(){
+        var gameScene = this.scene.get('Scene');
+        //let dist = this.add.shader('distort',this.sys.canvas.width/2,this.sys.canvas.height/2,320,240);
+        //dist.setData( gameScene.cameras.main.glTexture);
+        //console.log(dist);
+    }
+    update(){
+        
     }
 }

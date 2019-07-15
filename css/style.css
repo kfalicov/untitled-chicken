@@ -81,11 +81,11 @@ div{
 }
 
 .m_content{
-    margin-top: 12px;
+    position:relative;
+    top:-50px;
     background-color: #333333 transparent;
     border-radius: 1px;
     color: white;
-    padding: 12px 15px;
     /* box-shadow: 10px 10px 0 0 #00000081; */
     text-align: center;
 }

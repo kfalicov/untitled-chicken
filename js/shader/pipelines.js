@@ -1,21 +1,3 @@
-export class Shader extends Phaser.Renderer.WebGL.Pipelines.TextureTintPipeline{
-    /**
-     * 
-     * @param {*} game the game this shader belongs to.
-     * @param {*} vertShader optional vertex shader
-     * @param {*} fragShader optional fragment shader
-     */
-    constructor(game, vertShader, fragShader){
-        super(
-            {
-                game: game,
-                renderer: game.renderer,
-                vertShader: vertShader,
-                fragShader: fragShader
-            });
-    }
-}
-
 export class GrayscalePipeline extends Phaser.Renderer.WebGL.Pipelines.TextureTintPipeline {
     constructor(game)
     {
@@ -34,4 +16,121 @@ export class GrayscalePipeline extends Phaser.Renderer.WebGL.Pipelines.TextureTi
         });
     } 
 }
-export default GrayscalePipeline;
+
+export class DistortPipeline extends Phaser.Renderer.WebGL.Pipelines.TextureTintPipeline {
+    constructor(game)
+    {
+        super({
+            game: game,
+            renderer: game.renderer,
+            vertShader:`
+                precision mediump float;
+
+                uniform mat4 uProjectionMatrix;
+                uniform mat4 uViewMatrix;
+                uniform mat4 uModelMatrix;
+                
+                attribute vec2 inPosition;
+                attribute vec2 inTexCoord;
+                
+                varying vec2 outTexCoord;
+                varying vec2 outPosition;
+                
+                vec4 Distort(vec4 p)
+                {
+                    vec2 v = p.xy / p.w;
+
+                    // Convert to polar coords:
+                    float theta  = atan(v.y,v.x);
+                    float radius = length(v);
+
+                    // Distort:
+                    radius = pow(radius, 4.0);
+
+                    // Convert back to Cartesian:
+                    v.x = radius * cos(theta);
+                    v.y = radius * sin(theta);
+                    p.xy = v.xy * p.w;
+                    return p;
+                }
+                void main () 
+                {
+                    outTexCoord = inTexCoord;
+                    outPosition = inPosition;
+                
+                    //gl_Position = uProjectionMatrix * uViewMatrix * uModelMatrix * vec4(inPosition, 1.0, 1.0);
+                    float ratiox=(320.+160.)/320.;
+                    float ratioy=(240.+160.)/240.;
+                    vec4 p = uProjectionMatrix * vec4(inPosition.x*ratiox*2., inPosition.y*ratioy*2.,1.0,1.0);
+                    gl_Position = p;
+                }
+            `,
+            fragShader:`
+                precision mediump float;
+                uniform float     time;
+                uniform vec2      resolution;
+                uniform float     intensity;
+                uniform sampler2D uMainSampler;
+                varying vec2 outTexCoord;
+                void main( void ) {
+                    vec2 uv = outTexCoord;
+                    
+                    float ratiox=(320.+160.)/320.;
+                    float ratioy=(240.+160.)/240.;
+                    //uv.y *= -1.0;
+                    uv.x += ((sin((uv.y + (time * 0.0005)) * 10.0) * 0.008) + (sin((uv.y + (time * 0.002)) * 32.0) * 0.005))*intensity;
+                    uv.y += ((sin((uv.x + (time * 0.0004)) * 12.0) * 0.005) + (sin((uv.x - (time * 0.001)) * 50.0) * 0.004))*intensity;
+                    uv.x=(uv.x*ratiox)-(40./320.);
+                    uv.y=(uv.y*ratioy)-(40./240.);
+                    vec4 texColor = texture2D(uMainSampler, uv);
+                    if(uv.x<0.||uv.x>1.||uv.y<0.||uv.y>1.){
+                        texColor = vec4(0.,0.,0.,0.);
+                    }
+                    gl_FragColor = texColor;
+                }`
+        });
+    } 
+}
+
+export class BloomPipeline extends Phaser.Renderer.WebGL.Pipelines.TextureTintPipeline {
+    constructor(game)
+    {
+        super({
+            game: game,
+            renderer: game.renderer,
+            fragShader:`
+                precision mediump float;
+
+                // texcoords from the vertex shader
+                varying vec2 outTexCoord;
+                
+                // our textures coming from p5
+                uniform sampler2D tex0;
+                uniform sampler2D tex1;
+                
+                // the mouse value between 0 and 1
+                uniform float mouseX;
+                
+                void main() {
+                
+                vec2 uv = outTexCoord;
+                // the texture is loaded upside down and backwards by default so lets flip it
+                uv = 1.0 - uv;
+                
+                // get the camera and the blurred image as textures
+                vec4 cam = texture2D(tex0, uv);
+                vec4 blur = texture2D(tex1, uv);
+                
+                // calculate an average color for the blurred image
+                // this is essentially the same as saying (blur.r + blur.g + blur.b) / 3.0;
+                float avg = dot(blur.rgb, vec3(0.33333));
+                
+                // mix the blur and camera together according to how bright the blurred image is
+                // use the mouse to control the bloom
+                vec4 bloom = mix(cam, blur, clamp(avg*(1.0 + mouseX), 0.0, 1.0));
+                
+                gl_FragColor = bloom;
+                }`
+        });
+    } 
+}
