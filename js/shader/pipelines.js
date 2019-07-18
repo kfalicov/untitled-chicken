@@ -36,23 +36,6 @@ export class DistortPipeline extends Phaser.Renderer.WebGL.Pipelines.TextureTint
                 varying vec2 outTexCoord;
                 varying vec2 outPosition;
                 
-                vec4 Distort(vec4 p)
-                {
-                    vec2 v = p.xy / p.w;
-
-                    // Convert to polar coords:
-                    float theta  = atan(v.y,v.x);
-                    float radius = length(v);
-
-                    // Distort:
-                    radius = pow(radius, 4.0);
-
-                    // Convert back to Cartesian:
-                    v.x = radius * cos(theta);
-                    v.y = radius * sin(theta);
-                    p.xy = v.xy * p.w;
-                    return p;
-                }
                 void main () 
                 {
                     outTexCoord = inTexCoord;
@@ -130,6 +113,61 @@ export class BloomPipeline extends Phaser.Renderer.WebGL.Pipelines.TextureTintPi
                 vec4 bloom = mix(cam, blur, clamp(avg*(1.0 + mouseX), 0.0, 1.0));
                 
                 gl_FragColor = bloom;
+                }`
+        });
+    } 
+}
+
+export class DistortPipeline2 extends Phaser.Renderer.WebGL.Pipelines.TextureTintPipeline {
+    constructor(game)
+    {
+        super({
+            game: game,
+            renderer: game.renderer,
+            vertShader:`
+                precision mediump float;
+
+                uniform mat4 uProjectionMatrix;
+                uniform mat4 uViewMatrix;
+                uniform mat4 uModelMatrix;
+                
+                attribute vec2 inPosition;
+                attribute vec2 inTexCoord;
+                
+                uniform vec2      resolution;
+                
+                varying vec2 outTexCoord;
+                varying vec2 outPosition;
+                varying float outTintEffect;
+                varying vec4 outTint;
+                void main () 
+                {
+                    outTexCoord = vec2(inTexCoord.x,inTexCoord.y);
+                    outPosition = inPosition;
+                    float ratiox=(320.+80.)/320.;
+                    float ratioy=(240.+80.)/240.;
+                
+                    vec4 p = uModelMatrix * uViewMatrix * uProjectionMatrix * vec4(outPosition.x*ratiox*2., 640.-outPosition.y*ratioy*2.,1.0,1.0);
+                    gl_Position = p;               
+                }`,
+            fragShader:`
+                precision mediump float;
+                uniform float     time;
+                uniform float     intensity;
+                uniform sampler2D uMainSampler;
+                varying vec2 outTexCoord;
+                void main( void ) {
+                    vec2 uv = outTexCoord;
+                    
+                    //uv.y *= -1.0;
+                    uv.x += sin(uv.y*10.+(time*0.1))*0.012;
+                    //uv.y += ((sin((uv.x + (time * 0.0004)) * 12.0) * 0.005) + (sin((uv.x - (time * 0.001)) * 50.0) * 0.004));
+                    
+                    vec4 texColor = texture2D(uMainSampler, uv);
+                    if(uv.x<0.||uv.x>1.||uv.y<0.||uv.y>1.){
+                        texColor = vec4(0.,0.,0.,0.);
+                    }
+                    gl_FragColor = texColor;
                 }`
         });
     } 

@@ -1,5 +1,5 @@
 import { Chunk } from "../terrain.js";
-import { GrayscalePipeline, DistortPipeline, BloomPipeline } from "../shader/pipelines.js";
+import { GrayscalePipeline, DistortPipeline, BloomPipeline, DistortPipeline2 } from "../shader/pipelines.js";
 import { Chicken } from "../chicken.js";
 
 let gameScale=2;
@@ -48,6 +48,10 @@ export class Scene extends Phaser.Scene{
         this.distortPipeline = this.sys.game.renderer.pipelines['Distort'];
         if(!this.distortPipeline){
             this.distortPipeline = this.game.renderer.addPipeline('Distort', new DistortPipeline(this.game));
+        }
+        this.distortPipeline2 = this.sys.game.renderer.pipelines['Distort2'];
+        if(!this.distortPipeline2){
+            this.distortPipeline2 = this.game.renderer.addPipeline('Distort2', new DistortPipeline2(this.game));
         }
         this.bloomPipeline = this.sys.game.renderer.pipelines['Bloom'];
         if(!this.bloomPipeline){
@@ -120,6 +124,8 @@ export class Scene extends Phaser.Scene{
         var head = this.add.sprite(0,0,'standsheet_body').play('peck_head');
         head.setVisible(true);
 
+        //body.setPipeline('Distort2');
+
         let chicken = this.add.container(0,0,[shadow, body, head]);
         chicken.setSize(32,32);
         this.physics.world.enable(chicken);
@@ -166,7 +172,7 @@ export class Scene extends Phaser.Scene{
 
         this.input.on('pointermove', (pointer)=>{
             //console.log(pointer.x-160, pointer.y-120);
-            this.cameras.main.setFollowOffset((-pointer.x+this.cameras.main.x+160)/6, (-pointer.y+this.cameras.main.y+120)/6);
+            this.cameras.main.setFollowOffset((-pointer.x+this.sys.canvas.width/2)/6, (-pointer.y+this.sys.canvas.height/2)/6);
         }, this);
 
         this.input.on('pointerdown', function(pointer){
@@ -208,6 +214,7 @@ export class Scene extends Phaser.Scene{
         this.updateChicken(time, delta);
         this.updateChunks(time, delta);
         this.distortPipeline.setFloat1('time', time/10);
+        this.distortPipeline2.setFloat1('time', time/10);
         
     }
     updateChicken(time,delta){
