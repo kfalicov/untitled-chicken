@@ -1,16 +1,16 @@
-import {Scene, RenderScene} from './scenes/start.js';
+import {Scene} from './scenes/start.js';
 
 let gameScale=2;
 
 let config = {
     type: Phaser.WEBGL,
-    width: (320+80)*gameScale,
-    height: (240+80)*gameScale,
+    width: 320, //(320+80)*gameScale,
+    height: 240, //(240+80)*gameScale,
     parent: gamediv,
     pixelArt: true,
     antialias:false,
     roundPixels: true,
-    zoom: 1,
+    zoom: 2,
     physics: {
         default: 'arcade',
         arcade: {
@@ -20,7 +20,7 @@ let config = {
     },
     transparent: true,
     //scene: ClassicMode //use this to test specific scenes directly
-    scene: [Scene, RenderScene]
+    scene: [Scene]
 };
 
 let game = new Phaser.Game(config);

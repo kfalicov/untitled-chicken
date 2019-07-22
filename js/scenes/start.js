@@ -13,15 +13,19 @@ export class Scene extends Phaser.Scene{
         this.load.image('shadow', 'assets/chicken/shadow.png');
         this.load.image('treetop', 'assets/terrain/treetop.png');
         this.load.spritesheet('standsheet_body', 'assets/chicken/stand_body.png', { frameWidth: 32, frameHeight: 32, endFrame: 4 });
-        this.load.spritesheet('walksheet_headless', 'assets/chicken/walk_headless.png', { frameWidth: 32, frameHeight: 32, endFrame: 2 });
+        this.load.spritesheet('standsheet_head', 'assets/chicken/stand_head.png', { frameWidth: 32, frameHeight: 32, endFrame: 4 });
+        //this.load.spritesheet('walksheet_body', 'assets/chicken/walk_headless.png', { frameWidth: 32, frameHeight: 32, endFrame: 2 });
         this.load.spritesheet('walksheet_body', 'assets/chicken/walk_body.png', { frameWidth: 32, frameHeight: 32, endFrame: 2 });
+        this.load.spritesheet('walksheet_head', 'assets/chicken/walk_head.png', { frameWidth: 32, frameHeight: 32, endFrame: 1 });
         this.load.spritesheet('pecksheet_body', 'assets/chicken/peck_body.png', { frameWidth: 32, frameHeight: 32, endFrame: 4 });
         this.load.spritesheet('pecksheet_head', 'assets/chicken/peck_head.png', { frameWidth: 32, frameHeight: 32, endFrame: 4 });
         this.load.atlas('grass', 'assets/grass_tiles.png', 'assets/grass_tiles.json');
         //this.load.image('tiles', 'assets/grass_tiles.png');
         this.load.spritesheet('tiles_16', 'assets/terrain/16_terrain.png', { frameWidth: 16, frameHeight: 16 })
         this.load.spritesheet('tiles', 'assets/tiles.png', { frameWidth: 32, frameHeight: 32 });
-        this.load.glsl({key:'distort', shaderType:'fragment', url:'js/shader/distort.glsl'});
+        this.load.glsl('distort', 'js/shader/distort.frag', 'fragment');
+        this.load.glsl('marblefrag', 'js/shader/marble.frag', 'fragment');
+        this.load.glsl('pad', 'js/shader/pad.vs', 'vertex');
     }
     create(){
         /**
@@ -36,19 +40,34 @@ export class Scene extends Phaser.Scene{
         let chunkdiam = (2*this.chunkRadius)+1;
         let tilesdiam = chunkdiam*this.chunkSize;
 
-        //let duck = new Chicken(this, 40,40,'shadow');
-        //duck.setDepth(4);
-        //console.log(duck);
-        //this.duck=duck;
+        let player = new Chicken(this, 0,0,'shadow');
+        player.setDepth(2);
+        this.player=player;
 
         //this.map = this.make.tilemap({tileWidth:32, tileHeight:32, width: tilesdiam, height: tilesdiam});
         //this.tileset = this.map.addTilesetImage('tiles');
         //this.groundlayer = this.map.createBlankDynamicLayer('ground',this.tileset, -this.chunkRadius*this.chunkSize*this.tileSize, -this.chunkRadius*this.chunkSize*this.tileSize );
 
-        this.distortPipeline = this.sys.game.renderer.pipelines['Distort'];
-        if(!this.distortPipeline){
-            this.distortPipeline = this.game.renderer.addPipeline('Distort', new DistortPipeline(this.game));
-        }
+        //console.log(this.cache.shader.get('pad'))
+
+        this.marblePipeline = this.game.renderer.addPipeline('Marble', 
+            new Phaser.Renderer.WebGL.Pipelines.TextureTintPipeline({
+                game: this.game, 
+                renderer: this.game.renderer,
+                vertShader: this.cache.shader.get('pad').vertexSrc,
+                fragShader: this.cache.shader.get('marblefrag').fragmentSrc
+            })
+        );
+        this.marblePipeline.setFloat2('resolution', 320, 240);
+
+        this.distortPipeline = this.game.renderer.addPipeline('Distort', 
+            new Phaser.Renderer.WebGL.Pipelines.TextureTintPipeline({
+                game: this.game, 
+                renderer: this.game.renderer,
+                vertShader: this.cache.shader.get('pad').vertexSrc,
+                fragShader: this.cache.shader.get('distort').fragmentSrc
+            })
+        );
         this.distortPipeline2 = this.sys.game.renderer.pipelines['Distort2'];
         if(!this.distortPipeline2){
             this.distortPipeline2 = this.game.renderer.addPipeline('Distort2', new DistortPipeline2(this.game));
@@ -76,9 +95,9 @@ export class Scene extends Phaser.Scene{
          * initialize player animations
          */
         let standframes_body = this.anims.generateFrameNumbers('standsheet_body', {start:0, end: 4});
-        let walkframes_headless = this.anims.generateFrameNumbers('walksheet_headless', {frames: [0,1,0,2]});
+        let walkframes_headless = this.anims.generateFrameNumbers('walksheet_body', {frames: [0,1,0,2]});
         let peckframes_body = this.anims.generateFrameNumbers('pecksheet_body', {start:0, end: 4});
-        let walkframes_body = this.anims.generateFrameNumbers('walksheet_body', {frames: [0,1,2,1]});
+        let walkframes_body = this.anims.generateFrameNumbers('walksheet_body', {frames: [0,1,0,2]});
         let peckframes_head = this.anims.generateFrameNumbers('pecksheet_head', {start:0, end: 4});
         walkframes_headless[1].duration = 50;
         walkframes_headless[3].duration = 50;
@@ -91,66 +110,19 @@ export class Scene extends Phaser.Scene{
 
         this.cameras.main.setBackgroundColor('#aaaaaa');
 
-        this.anims.create({
-            key: 'stand_body',
-            frames: standframes_body,
-            frameRate: 12,
-        });
-        this.anims.create({
-            key: 'walk_headless',
-            frames: walkframes_headless,
-            frameRate: 15,
-        }).skipMissedFrames=true;
-        this.anims.create({
-            key: 'walk_body',
-            frames: walkframes_body,
-            frameRate: 15,
-        }).skipMissedFrames=true;
-        this.anims.create({
-            key: 'peck_body',
-            frames: peckframes_body,
-            frameRate: 30,
-        });
-        this.anims.create({
-            key: 'peck_head',
-            frames: peckframes_head,
-            frameRate: 30,
-        });
-
-        var shadow = this.add.image(0,0,'shadow');
-        shadow.alpha=0.5;
-        shadow.setBlendMode(Phaser.BlendModes.MULTIPLY);
-        var body = this.add.sprite(0,0,'standsheet_body').play('stand_body');
-        var head = this.add.sprite(0,0,'standsheet_body').play('peck_head');
-        head.setVisible(true);
-
-        //body.setPipeline('Distort2');
-
-        let chicken = this.add.container(0,0,[shadow, body, head]);
-        chicken.setSize(32,32);
-        this.physics.world.enable(chicken);
-
-        
-        chicken.depth = 2;
-
         this.cameras.main.setSize(320,240);
         
         this.cameras.main.zoom=1;
-        this.cameras.main.startFollow(chicken);
+        this.cameras.main.startFollow(player);
         this.cameras.main.setLerp(0.1,0.1);
         this.cameras.main.roundPixels=true;
-        this.cameras.main.setRenderToTexture('Distort');
+        //this.cameras.main.setRenderToTexture('Marble');
         //rendercam.setPipeline('distort');
         
         //this.cameras.main.zoom=2;
-        chicken.body.useDamping = true;
-        chicken.body.setMaxSpeed(100);
-        chicken.body.drag.set(0.9, 0.9);
-        chicken.body.setSize(26, 16);
-        chicken.body.setOffset(3, 14);
         
         for(let i=0;i<this.chunks.length;i++){
-            this.chunks[i].collider = this.physics.add.collider(chicken, this.chunks[i].collision);
+            this.chunks[i].collider = this.physics.add.collider(player, this.chunks[i].collision);
         }
         this.movement = this.input.keyboard.addKeys({
             up: 'W',
@@ -176,27 +148,18 @@ export class Scene extends Phaser.Scene{
         }, this);
 
         this.input.on('pointerdown', function(pointer){
-           this.pecking=true;
-           //this.duck.peck();
+           //this.pecking=true;
+           player.isPecking=true;
+           player.clicked=true;
         }, this);
-        
-        body.on('animationcomplete', (animation, frame)=>{
-            if(animation.key ==="peck_body"){
-                this.pecking=false;
-            }
-        }, this);
-        head.on('animationcomplete', (animation, frame)=>{
-            if(animation.key ==="peck_head"){
-                this.pecking=false;
-            }
-        }, this);
+        this.input.on('pointerup', function(pointer){
+            //this.pecking=true;
+            player.isPecking=false;
+         }, this);
         
         this.autoPeck = true;
         
-        
-        this.chicken = chicken;
         //console.log(chicken.list)
-        this.scene.launch('RenderScene');
     }
 
     getChunk(x, y){
@@ -215,7 +178,7 @@ export class Scene extends Phaser.Scene{
         this.updateChunks(time, delta);
         this.distortPipeline.setFloat1('time', time/10);
         this.distortPipeline2.setFloat1('time', time/10);
-        
+        this.marblePipeline.setFloat1('time', time/1000);
     }
     updateChicken(time,delta){
         let accelval = 1500;
@@ -233,85 +196,28 @@ export class Scene extends Phaser.Scene{
         if(this.movement.right.isDown){
             forcex+=accelval;
         }
-        this.chicken.body.setAcceleration(forcex, forcey);
-        //this.duck.body.setAcceleration(forcex, forcey);
+        this.player.body.setAcceleration(forcex, forcey);
         //let flip = Math.max(this.chicken.x-this.input.activePointer.x, 0);
         //let flip = Math.max(this.chicken.x-this.cameras.main.midPoint.x, 0);
-        let chickenXreltoCenter = this.chicken.x-this.cameras.main.midPoint.x;
+        let chickenXreltoCenter = this.player.x-this.cameras.main.midPoint.x;
         let mouseXreltoCenter = this.input.activePointer.x-160;
         
         let flip = Math.max(chickenXreltoCenter-mouseXreltoCenter, 0);
-        this.chicken.each(entity => entity.flipX=flip);
-        //this.duck.setFlip(flip);
-        
-        let body = this.chicken.list[1];
-        let head = this.chicken.list[2];
+        this.player.setFlip(flip, false);
 
-        let bodyanims = body.anims;
-        let headanims = head.anims;
-
-        if(this.chicken.body.speed>=40){
+        if(this.player.body.speed>=40){
             this.walking = true;
+            this.player.isMoving=true;
         }else{
             this.walking = false;
+            this.player.isMoving=false;
         }
         
-        if(this.autoPeck && this.input.activePointer.isDown){
-            this.pecking=true;
-        }
-        if(this.pecking){
-            if(bodyanims.currentAnim.key==="peck_body"){
-                let progress= bodyanims.getProgress();
-                if(this.walking){
-                    bodyanims.play("walk_headless");
-                    headanims.play("peck_head");
-                    headanims.setProgress(progress);
-                    head.setVisible(true);
-                }else{
-                    bodyanims.play("peck_body", true);
-                    head.setVisible(false);
-                }
-            }else if(headanims.currentAnim.key==="peck_head"){
-                let progress= headanims.getProgress();
-                if(this.walking){
-                    headanims.play("peck_head", true);
-                    bodyanims.play("walk_headless", true);
-                    head.setVisible(true);
-                }else{
-                    bodyanims.play("peck_body", true);
-                    bodyanims.setProgress(progress);
-                    head.setVisible(false);
-                }
-            }else{
-                if(this.walking){
-                    headanims.play("peck_head", true);
-                    bodyanims.play("walk_headless", true);
-                    head.setVisible(true);
-                }else{
-                    bodyanims.play("peck_body", true);
-                    head.setVisible(false);
-                }
-            }
-        }else{
-            //console.log("not pecking");
-            head.setVisible(false);
-            if(this.walking){
-                let progress=0;
-                if(bodyanims.currentAnim.key==="peck_body"){
-                    progress=bodyanims.getProgress();
-                }
-                bodyanims.play("walk_body", true);
-                if(progress!==0){
-                    bodyanims.setProgress(progress);
-                }
-            }else{
-                bodyanims.play("stand_body", true);
-            }
-        }
+        
     }
     updateChunks(time, delta){
-        var snappedChunkX = Math.floor(this.chicken.x/(this.chunkSize*this.tileSize));
-        var snappedChunkY = Math.floor(this.chicken.y/(this.chunkSize*this.tileSize));
+        var snappedChunkX = Math.floor(this.player.x/(this.chunkSize*this.tileSize));
+        var snappedChunkY = Math.floor(this.player.y/(this.chunkSize*this.tileSize));
         if(snappedChunkX!=this.currentChunk.x || snappedChunkY!=this.currentChunk.y){
             let chunkWorldX = (snappedChunkX-1)*this.chunkSize*this.tileSize;
             let chunkWorldY = (snappedChunkY-1)*this.chunkSize*this.tileSize;
@@ -326,13 +232,13 @@ export class Scene extends Phaser.Scene{
                 } */
                 let topLeftChunk = new Chunk(this, snappedChunkX-this.chunkRadius, 
                 snappedChunkY-this.chunkRadius);
-                topLeftChunk.load(this.chicken);
+                topLeftChunk.load(this.player);
                 this.chunks.unshift(topLeftChunk);
                 for(let i=1;i<chunkDiameter;i++){
                     this.chunks[i*chunkDiameter].unload();
                     var newChunk = new Chunk(this, snappedChunkX-this.chunkRadius, snappedChunkY-this.chunkRadius+i);
                     this.chunks[i*chunkDiameter] = newChunk;
-                    newChunk.load(this.chicken);
+                    newChunk.load(this.player);
                 }
                 this.chunks.pop().unload();
             }else if(snappedChunkX > this.currentChunk.x){
@@ -344,11 +250,11 @@ export class Scene extends Phaser.Scene{
                     this.chunks[i*chunkDiameter].unload();
                     var newChunk = new Chunk(this, snappedChunkX+this.chunkRadius, snappedChunkY-this.chunkRadius+(i-1));
                     this.chunks[i*chunkDiameter] = newChunk;
-                    newChunk.load(this.chicken);
+                    newChunk.load(this.player);
                 }
                 let bottomRightChunk = new Chunk(this, snappedChunkX+this.chunkRadius, 
                 snappedChunkY+this.chunkRadius);
-                bottomRightChunk.load(this.chicken);
+                bottomRightChunk.load(this.player);
                 this.chunks.push(bottomRightChunk);
                 this.chunks.shift().unload();
             }
@@ -356,7 +262,7 @@ export class Scene extends Phaser.Scene{
                 console.log('moved up');
                 for(let i=0;i<chunkDiameter;i++){
                     var newChunk = new Chunk(this, (snappedChunkX+this.chunkRadius)-i, snappedChunkY-this.chunkRadius);
-                    newChunk.load(this.chicken);
+                    newChunk.load(this.player);
                     this.chunks.unshift(newChunk);
                     this.chunks.pop().unload();
                 }
@@ -364,7 +270,7 @@ export class Scene extends Phaser.Scene{
                 console.log('moved down');
                 for(let i=0;i<chunkDiameter;i++){
                     var newChunk = new Chunk(this, (snappedChunkX-this.chunkRadius)+i, snappedChunkY+this.chunkRadius);
-                    newChunk.load(this.chicken);
+                    newChunk.load(this.player);
                     this.chunks.push(newChunk);
                     this.chunks.shift().unload();
                 }
@@ -377,23 +283,5 @@ export class Scene extends Phaser.Scene{
             }
             this.currentChunk = {x: snappedChunkX, y: snappedChunkY};
         }
-    }
-}
-
-export class RenderScene extends Phaser.Scene{
-    constructor(){
-        super('RenderScene');
-    }
-    preload(){
-
-    }
-    create(){
-        var gameScene = this.scene.get('Scene');
-        //let dist = this.add.shader('distort',this.sys.canvas.width/2,this.sys.canvas.height/2,320,240);
-        //dist.setData( gameScene.cameras.main.glTexture);
-        //console.log(dist);
-    }
-    update(){
-        
     }
 }

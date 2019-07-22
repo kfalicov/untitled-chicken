@@ -1,19 +1,27 @@
 export class Chicken extends Phaser.Physics.Arcade.Sprite{
     constructor(scene, x, y, key){
-        super(scene, x, y, 'key');
+        super(scene, x, y, 'pecksheet_body');
+
         this.scene=scene;
         this.scene.add.existing(this);
         this.scene.physics.world.enable(this);
-        
-        this.head=scene.add.sprite(x,y,'pecksheet_head',0).setDepth(4);
 
-        scene.sys.updateList.remove(this.head);
+        this.loadAnimations();
+
+        this.shadow = scene.add.image(x,y,'shadow').setDepth(1);
+        this.shadow.alpha=0.5;
+        this.shadow.setBlendMode(Phaser.BlendModes.MULTIPLY);
+        
+        this.head=scene.add.sprite(x+4,y,'pecksheet_head',0).setDepth(2);
+        this.head.preUpdate=()=>{};
+
         /**
          * this enables the head to move with the body, without being attached to the body
          */
         this.body.postUpdate = ()=>{
             this.body.__proto__.postUpdate.call(this.body);
             this.head.setPosition(this.x, this.y);
+            this.shadow.setPosition(this.x,this.y);
         }
 
         this.body.useDamping = true;
@@ -22,40 +30,52 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
         this.body.setSize(26, 16);
         this.body.setOffset(3, 14);
 
-        /**
-         * initialize player animations
-         */
-        let standframes_body = scene.anims.generateFrameNumbers('standsheet_body', {start:0, end: 4});
-        let walkframes_headless = scene.anims.generateFrameNumbers('walksheet_headless', {frames: [0,1,0,2]});
-        let peckframes_body = scene.anims.generateFrameNumbers('pecksheet_body', {start:0, end: 4});
-        let walkframes_body = scene.anims.generateFrameNumbers('walksheet_body', {frames: [0,1,2,1]});
-        let peckframes_head = scene.anims.generateFrameNumbers('pecksheet_head', {start:0, end: 4});
-        walkframes_headless[1].duration = 50;
-        walkframes_headless[3].duration = 50;
-        walkframes_body[1].duration = 50;
-        walkframes_body[3].duration = 50;
+        this.isMoving=false;
+        this.isPecking=false;
+        this.clicked=false;
+        this.play('stand_body');
+        this.head.play('stand_head');
+        this.hat = scene.add.image(x+2,y+2,'key').setDepth(2);
+    }
+
+    loadAnimations(){
+        let standframes_body = this.scene.anims.generateFrameNumbers('standsheet_body', {start:0, end: 4});
+        let standframes_head = this.scene.anims.generateFrameNumbers('standsheet_head', {start:0, end: 4});
+        this.standoffsets=[
+            {x:4, y:1},
+            {x:4, y:1},
+            {x:4, y:1},
+            {x:4, y:-1},
+            {x:4, y:-2},
+        ];
+        let sbody = this.scene.anims.create({
+            key: 'stand_body',
+            frames: standframes_body,
+            frameRate: 12,
+        });
+        this.scene.anims.create({
+            key: 'stand_head',
+            frames: standframes_head,
+            frameRate: 12,
+        });
+        for(let i=0;i<sbody.frames.length;i++){
+            sbody.frames[i].offset=this.standoffsets[i];
+        }
+
+        let peckframes_body = this.scene.anims.generateFrameNumbers('pecksheet_body', {start:0, end: 4});
+        let peckframes_head = this.scene.anims.generateFrameNumbers('pecksheet_head', {start:0, end: 4});
         peckframes_body[1].duration = 10;
         peckframes_body[4].duration = 30;
         peckframes_head[1].duration = 10;
         peckframes_head[4].duration = 30;
-
-        this.scene.anims.create({
-            key: 'stand_body',
-            frames: standframes_body,
-            frameRate: 12,
-            repeat:-1
-        });
-        this.scene.anims.create({
-            key: 'walk_headless',
-            frames: walkframes_headless,
-            frameRate: 15,
-        }).skipMissedFrames=true;
-        this.scene.anims.create({
-            key: 'walk_body',
-            frames: walkframes_body,
-            frameRate: 15,
-        }).skipMissedFrames=true;
-        this.scene.anims.create({
+        this.peckoffsets=[
+            {x:4,y:-4},
+            {x:4,y:-2},
+            {x:4,y:-1},
+            {x:4,y:-2},
+            {x:4,y:-3}
+        ];
+        let pbody = this.scene.anims.create({
             key: 'peck_body',
             frames: peckframes_body,
             frameRate: 30,
@@ -65,58 +85,104 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
             frames: peckframes_head,
             frameRate: 30,
         });
+        for(let i=0;i<pbody.frames.length;i++){
+            pbody.frames[i].offset=this.peckoffsets[i];
+        }
         
-        this.play('stand_body');
-
-        this.peckheadanim=false;
-        this.peckbodyanim=false;
-        this.walkanim=false;
-        this.standanim=true;
-
-        this.head.on('animationcomplete', (animation, frame)=>{
-            if(animation.key ==="peck_head"){
-                this.peckheadanim=false;
-                console.log('stopped headbangin')
-            }
-        }, this);
-        this.on('animationcomplete', (animation, frame)=>{
-            if(animation.key ==="walk_body"){
-                this.walkanim=false;
-            }else if(animation.key ==="peck_body"){
-                this.peckbodyanim=false;
-            }else if(animation.key ==="stand_body"){
-                this.standanim=false;
-            }
+        let walkframes_body = this.scene.anims.generateFrameNumbers('walksheet_body', {frames: [0,1,0,2]});
+        let walkframes_head = this.scene.anims.generateFrameNumbers('walksheet_head', {frames: [0,1,0,1]});
+        walkframes_body[1].duration = 50;
+        walkframes_body[3].duration = 50;
+        walkframes_head[1].duration = 50;
+        walkframes_head[3].duration = 50;
+        this.walkoffsets=[
+            {x:4, y:-3},
+            {x:4, y:-4},
+        ];
+        let wbody = this.scene.anims.create({
+            key: 'walk_body',
+            frames: walkframes_body,
+            frameRate: 15,
         });
-    }
-    preUpdate(time,delta){
-        if(!this.peckheadanim){
-            this.head.setVisible(false);
-        }else{
-            this.head.setVisible(true);
+        this.scene.anims.create({
+            key: 'walk_head',
+            frames: walkframes_head,
+            frameRate: 15,
+        });
+        for(let i=0;i<wbody.frames.length;i++){
+            wbody.frames[i].offset=this.walkoffsets[i%2];
         }
-        super.preUpdate(time,delta);
-        if(this.body.speed>=40){
-            if(this.peckheadanim){
-                this.head.play('peck_head', true);
-                this.play('walk_headless', true);
-            }else{
+
+        
+    }
+
+    preUpdate(time, delta){
+        
+        if(this.isMoving){
+            if(this.isPecking){
                 this.play('walk_body', true);
+                if(this.clicked){
+                    this.clicked=false;
+                    this.head.play('peck_head');
+                }
+                this.head.play('peck_head', true);
+            }else{
+                
+                this.play('walk_body', true); 
+                //sync walking head with walking body when head stops pecking
+                if(this.head.anims.getCurrentKey()==='peck_head'){
+                    if(this.head.anims.getProgress()<1 || (this.anims.currentFrame.index%2==0)){
+                        //do nothing, wait for headbanging to finish and for sync frame
+                    }else{
+                        this.head.play('walk_head');
+                        this.play('walk_body');
+                    }
+                }else{
+                    this.head.play('walk_head', true); 
+                }
             }
+            
         }else{
-            if(this.peckheadanim){
-                this.play('peck_body');
+            if(this.isPecking){
+                if(this.clicked){
+                    this.clicked=false;
+                    this.head.play('peck_head');
+                    this.play('peck_body');
+                }
+                this.head.play('peck_head',true);
+                //sync pecking body with pecking head when stop walking
+                if(this.anims.getCurrentKey()==='walk_body'){
+                    this.play('peck_body');
+                    this.anims.setProgress(this.head.anims.getProgress());
+                    this.anims.accumulator = this.head.anims.accumulator;
+                }else{
+                    this.play('peck_body',true);
+                }
+            }else{
+                if(this.head.anims.getCurrentKey()==='peck_head'){
+                    if(this.head.anims.getProgress()<1){
+                        //do nothing, wait for headbanging to finish
+                    }else{
+                        this.play('stand_body');
+                        this.head.play('stand_head');
+                    }
+                }else{
+                    this.play('stand_body',true);
+                    this.head.play('stand_head',true);
+                }
             }
-            this.play('stand_body', true);
         }
+        
+        this.anims.update(time,delta);
+        this.head.anims.update(time,delta);
+
+        let fram=this.anims.currentFrame;
+        let offx = this.flipX? fram.offset.x : -fram.offset.x;
+        this.head.setDisplayOrigin(16+offx, 16-fram.offset.y);
     }
-    setFlip(x,y){
-        super.setFlip(x,y);
-        this.head.setFlip(x,y);
-    }
-    peck(){
-        this.peckheadanim=true;
-        this.head.setVisible(true);
-        this.head.play('peck_head');
+    setFlip(flipX, flipY){
+        super.setFlip(flipX, flipY);
+        this.head.setFlip(flipX,flipY);
+        this.shadow.setFlip(flipX, flipY);
     }
 }
