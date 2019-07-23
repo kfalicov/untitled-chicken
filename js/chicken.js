@@ -10,9 +10,9 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
 
         this.shadow = scene.add.image(x,y,'shadow');
         //this.reflection = scene.add.image(x,y,'reflect').setDepth(1).setOrigin(0.5,0);
-        this.reflection = scene.add.shader('reflect', x, y-0, 64,64).setDepth(1).setOrigin(0.5,0);
+        this.reflection = scene.add.shader('reflect', x, y+0, 64,64).setDepth(0.5).setOrigin(0.5,0);
         this.reflection.setChannel0('reflect');
-        this.reflection.scaleY = 0.75;
+        this.reflection.scaleY = 0.66;
         this.reflection.flipY = true;
 
         this.head=scene.add.sprite(x+4,y,'pecksheet_head',0);
@@ -25,7 +25,7 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
             this.body.__proto__.postUpdate.call(this.body);
             this.head.setPosition(this.x, this.y);
             this.shadow.setPosition(this.x,this.y);
-            this.reflection.setPosition(this.x, this.y-0);
+            this.reflection.setPosition(this.x, this.y+0);
         }
 
         this.body.useDamping = true;

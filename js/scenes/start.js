@@ -52,7 +52,7 @@ export class Scene extends Phaser.Scene{
         this.shadows = this.add.container(0,0);
         this.shadows.add(player.shadow);
 
-        let screenshadow = this.add.tileSprite(0,0,this.sys.canvas.width, this.sys.canvas.height,'black').setDepth(1).setOrigin(0);
+        let screenshadow = this.add.tileSprite(0,0,this.sys.canvas.width, this.sys.canvas.height,'black').setDepth(0.1).setOrigin(0);
         screenshadow.alpha=0.4;
         //screenshadow.setBlendMode(Phaser.BlendModes.MULTIPLY);
         screenshadow.setScrollFactor(0);

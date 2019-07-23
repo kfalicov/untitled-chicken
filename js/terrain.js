@@ -115,7 +115,7 @@ export class Chunk{
                         //treeoffsetx=1-Math.abs(treeoffsetx);
                         let offX = Math.min(Math.max(Math.round(treeoffsetx*8)*2, -8), 8);
                         let offY = Math.min(Math.max(Math.round(treeoffsety*8)*2, -8), 8);
-                        var stump = this.scene.add.image(tileX+16+offX, tileY+16+offY, 'tiles_16',1);
+                        var stump = this.scene.add.image(tileX+16+offX, tileY+16+offY, 'tiles_16',1).setDepth(1);
                         this.collision.add(stump);
                         let i;
                         for(i=0;i<treeHeight;i++){
