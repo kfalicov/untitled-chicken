@@ -11,6 +11,7 @@ export class Scene extends Phaser.Scene{
     }
     preload(){
         this.load.image('shadow', 'assets/chicken/shadow.png');
+        this.load.image('black', 'assets/black.png');
         this.load.image('treetop', 'assets/terrain/treetop.png');
         this.load.spritesheet('standsheet_body', 'assets/chicken/stand_body.png', { frameWidth: 32, frameHeight: 32, endFrame: 4 });
         this.load.spritesheet('standsheet_head', 'assets/chicken/stand_head.png', { frameWidth: 32, frameHeight: 32, endFrame: 4 });
@@ -24,6 +25,7 @@ export class Scene extends Phaser.Scene{
         this.load.spritesheet('tiles_16', 'assets/terrain/16_terrain.png', { frameWidth: 16, frameHeight: 16 })
         this.load.spritesheet('tiles', 'assets/tiles.png', { frameWidth: 32, frameHeight: 32 });
         this.load.glsl('distort', 'js/shader/distort.frag', 'fragment');
+        this.load.glsl('reflect', 'js/shader/reflect.frag', 'fragment');
         this.load.glsl('marblefrag', 'js/shader/marble.frag', 'fragment');
         this.load.glsl('pad', 'js/shader/pad.vs', 'vertex');
     }
@@ -40,15 +42,33 @@ export class Scene extends Phaser.Scene{
         let chunkdiam = (2*this.chunkRadius)+1;
         let tilesdiam = chunkdiam*this.chunkSize;
 
-        let player = new Chicken(this, 0,0,'shadow');
+        this.reflecTex = this.add.renderTexture(0,0,64,64);
+        this.reflecTex.saveTexture('reflect');
+        this.reflecTex.alpha=0.5;
+        let player = new Chicken(this, 0,0);
         player.setDepth(2);
         this.player=player;
+
+        this.shadows = this.add.container(0,0);
+        this.shadows.add(player.shadow);
+
+        let screenshadow = this.add.tileSprite(0,0,this.sys.canvas.width, this.sys.canvas.height,'black').setDepth(1).setOrigin(0);
+        screenshadow.alpha=0.4;
+        //screenshadow.setBlendMode(Phaser.BlendModes.MULTIPLY);
+        screenshadow.setScrollFactor(0);
+
+        var shadowmask = new Phaser.Display.Masks.BitmapMask(this, this.shadows);
+        screenshadow.setMask(shadowmask);
+
+        
 
         //this.map = this.make.tilemap({tileWidth:32, tileHeight:32, width: tilesdiam, height: tilesdiam});
         //this.tileset = this.map.addTilesetImage('tiles');
         //this.groundlayer = this.map.createBlankDynamicLayer('ground',this.tileset, -this.chunkRadius*this.chunkSize*this.tileSize, -this.chunkRadius*this.chunkSize*this.tileSize );
 
         //console.log(this.cache.shader.get('pad'))
+        //let reflection = this.add.shader('reflect', 0,0,32,32);
+        //reflection.setChannel0(this.player.texture.key);
 
         this.marblePipeline = this.game.renderer.addPipeline('Marble', 
             new Phaser.Renderer.WebGL.Pipelines.TextureTintPipeline({
@@ -113,9 +133,9 @@ export class Scene extends Phaser.Scene{
         this.cameras.main.setSize(320,240);
         
         this.cameras.main.zoom=1;
-        this.cameras.main.startFollow(player);
-        this.cameras.main.setLerp(0.1,0.1);
-        this.cameras.main.roundPixels=true;
+        this.cameras.main.startFollow(player, true, 0.1, 0.1);
+        //this.cameras.main.setLerp(0.1,0.1);
+        //this.cameras.main.roundPixels=true;
         //this.cameras.main.setRenderToTexture('Marble');
         //rendercam.setPipeline('distort');
         
@@ -179,6 +199,8 @@ export class Scene extends Phaser.Scene{
         this.distortPipeline.setFloat1('time', time/10);
         this.distortPipeline2.setFloat1('time', time/10);
         this.marblePipeline.setFloat1('time', time/1000);
+        this.reflecTex.clear();
+        this.reflecTex.draw([this.player,this.player.head], 32,32);
     }
     updateChicken(time,delta){
         let accelval = 1500;

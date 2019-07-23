@@ -5,7 +5,7 @@ uniform float     intensity;
 uniform sampler2D uMainSampler;
 varying vec2 outTexCoord;
 void main( void ) {
-    vec2 uv = outTexCoord;
+    vec2 uv = -.5 + gl_FragCoord.xy / resolution.xy;
     
     float ratiox=(320.+160.)/320.;
     float ratioy=(240.+160.)/240.;

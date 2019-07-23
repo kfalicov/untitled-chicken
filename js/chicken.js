@@ -1,5 +1,5 @@
 export class Chicken extends Phaser.Physics.Arcade.Sprite{
-    constructor(scene, x, y, key){
+    constructor(scene, x, y){
         super(scene, x, y, 'pecksheet_body');
 
         this.scene=scene;
@@ -8,11 +8,14 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
 
         this.loadAnimations();
 
-        this.shadow = scene.add.image(x,y,'shadow').setDepth(1);
-        this.shadow.alpha=0.5;
-        this.shadow.setBlendMode(Phaser.BlendModes.MULTIPLY);
-        
-        this.head=scene.add.sprite(x+4,y,'pecksheet_head',0).setDepth(2);
+        this.shadow = scene.add.image(x,y,'shadow');
+        //this.reflection = scene.add.image(x,y,'reflect').setDepth(1).setOrigin(0.5,0);
+        this.reflection = scene.add.shader('reflect', x, y-0, 64,64).setDepth(1).setOrigin(0.5,0);
+        this.reflection.setChannel0('reflect');
+        this.reflection.scaleY = 0.75;
+        this.reflection.flipY = true;
+
+        this.head=scene.add.sprite(x+4,y,'pecksheet_head',0);
         this.head.preUpdate=()=>{};
 
         /**
@@ -22,6 +25,7 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
             this.body.__proto__.postUpdate.call(this.body);
             this.head.setPosition(this.x, this.y);
             this.shadow.setPosition(this.x,this.y);
+            this.reflection.setPosition(this.x, this.y-0);
         }
 
         this.body.useDamping = true;
@@ -35,7 +39,6 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
         this.clicked=false;
         this.play('stand_body');
         this.head.play('stand_head');
-        this.hat = scene.add.image(x+2,y+2,'key').setDepth(2);
     }
 
     loadAnimations(){
@@ -151,17 +154,21 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
                 }
                 this.head.play('peck_head',true);
                 //sync pecking body with pecking head when stop walking
-                if(this.anims.getCurrentKey()==='walk_body'){
-                    this.play('peck_body');
-                    this.anims.setProgress(this.head.anims.getProgress());
-                    this.anims.accumulator = this.head.anims.accumulator;
+                if(this.anims.getCurrentKey()!=='peck_body'){
+                    if(this.head.anims.getProgress()<1 || this.head.anims.accumulator+delta<this.head.anims.nextTick){
+                        //do nothing, wait for headbanging to finish and for sync frame
+                        this.play('walk_body');
+                    }else{
+                        this.play('peck_body');
+                        this.head.play('peck_head');
+                    }
                 }else{
                     this.play('peck_body',true);
                 }
             }else{
                 if(this.head.anims.getCurrentKey()==='peck_head'){
-                    if(this.head.anims.getProgress()<1){
-                        //do nothing, wait for headbanging to finish
+                    if(this.head.anims.getProgress()<1 || this.head.anims.accumulator+delta<this.head.anims.nextTick){
+                        //do nothing, wait for headbanging to finish and for sync frame
                     }else{
                         this.play('stand_body');
                         this.head.play('stand_head');
@@ -184,5 +191,16 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
         super.setFlip(flipX, flipY);
         this.head.setFlip(flipX,flipY);
         this.shadow.setFlip(flipX, flipY);
+    }
+    setMask(mask){
+        super.setMask(mask);
+        this.head.setMask(mask);
+    }
+    setDepth(depth){
+        super.setDepth(depth);
+        this.head.setDepth(depth);
+    }
+    setPipeline(){
+
     }
 }
