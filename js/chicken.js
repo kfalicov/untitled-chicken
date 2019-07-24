@@ -205,17 +205,20 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
             if(!this.stepped){
                 if(this.anims.getCurrentKey()==='walk_body'){
                     if(this.anims.currentFrame.index==1){
-                        this.emitter.setPosition(this.x+4, this.y+13);
+                        this.emitter.setPosition(this.x+4+this.body.deltaX(), this.y+13+this.body.deltaY());
                         this.emitter.explode();
                         this.stepped=true;
                     }else if(this.anims.currentFrame.index==3){
-                        this.emitter.setPosition(this.x-4, this.y+13);
+                        this.emitter.setPosition(this.x-4+this.body.deltaX(), this.y+13+this.body.deltaY());
                         this.emitter.explode();
                         this.stepped=true; 
                     }
+                }else if(this.anims.getCurrentKey()==='stand_body'){
+                    this.emitter.explode();
+                    this.stepped=true;
                 }
             }else{
-                if(this.anims.getCurrentKey()!=='walk_body' || this.anims.currentFrame.index%2!=1){
+                if(this.anims.getCurrentKey()==='walk_body' && this.anims.currentFrame.index%2!=1){
                     this.stepped=false;
                 }
             }
