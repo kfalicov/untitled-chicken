@@ -1,4 +1,5 @@
 import { Chunk } from "../terrain.js";
+import {AnimatedParticle} from "../particle.js";
 import { GrayscalePipeline, DistortPipeline, BloomPipeline, DistortPipeline2 } from "../shader/pipelines.js";
 import { Chicken } from "../chicken.js";
 
@@ -22,12 +23,14 @@ export class Scene extends Phaser.Scene{
         this.load.spritesheet('pecksheet_head', 'assets/chicken/peck_head.png', { frameWidth: 32, frameHeight: 32, endFrame: 4 });
         this.load.atlas('grass', 'assets/grass_tiles.png', 'assets/grass_tiles.json');
         //this.load.image('tiles', 'assets/grass_tiles.png');
-        this.load.spritesheet('tiles_16', 'assets/terrain/16_terrain.png', { frameWidth: 16, frameHeight: 16 })
+        this.load.spritesheet('tiles_16', 'assets/terrain/16_terrain.png', { frameWidth: 16, frameHeight: 16 });
         this.load.spritesheet('tiles', 'assets/tiles.png', { frameWidth: 32, frameHeight: 32 });
         this.load.glsl('distort', 'js/shader/distort.frag', 'fragment');
         this.load.glsl('reflect', 'js/shader/reflect.frag', 'fragment');
         this.load.glsl('marblefrag', 'js/shader/marble.frag', 'fragment');
         this.load.glsl('pad', 'js/shader/pad.vs', 'vertex');
+        this.load.image('clouds', 'assets/clouds2.png');
+        this.load.spritesheet('particles', 'assets/particle.png',{frameWidth:16, frameHeight:16});
     }
     create(){
         /**
@@ -42,10 +45,51 @@ export class Scene extends Phaser.Scene{
         let chunkdiam = (2*this.chunkRadius)+1;
         let tilesdiam = chunkdiam*this.chunkSize;
 
-        this.reflecTex = this.add.renderTexture(0,0,64,64);
-        this.reflecTex.saveTexture('reflect');
-        this.reflecTex.alpha=0.5;
+        var rainsplat = this.anims.get('rainsplat');
+        if(rainsplat === undefined){
+            rainsplat = this.anims.create({
+                key:'splat',
+                frames: this.anims.generateFrameNumbers('particles', {start:0, end: 4}),
+                frameRate: 24,
+                repeat:0
+            });
+        }
+        class DropPart extends AnimatedParticle{
+            constructor(emitter){
+                super(emitter, rainsplat);
+            }
+        }
+        let particles = this.add.particles('particles');
+        let screenRect=new Phaser.Geom.Rectangle(0,0,this.sys.canvas.width+128, this.sys.canvas.height+128);
+        this.rainEmitter = particles.createEmitter({
+            //frame:0,
+            x:0, y:0,
+            speed: 0,
+            lifespan: 600,
+            quantity:2,
+            frequency:1,
+            alpha: {start:0.2,end:0.0},
+            scale: 1,
+            on:true,
+            emitZone: {type: 'random', source:screenRect},
+            particleClass: DropPart,
+            blendMode: 'ADD',
+        });
+        particles.setDepth(1);
+        let stepEmitter = particles.createEmitter({
+            x:0, y:0,
+            speed:0,
+            lifespan: 600,
+            quantity:1,
+            alpha: {start:0.5, end:0.0},
+            scale:2,
+            on:false,
+            particleClass: DropPart,
+            blendMode: 'ADD',
+        });
+
         let player = new Chicken(this, 0,0);
+        player.emitter = stepEmitter;
         player.setDepth(2);
         this.player=player;
 
@@ -53,14 +97,21 @@ export class Scene extends Phaser.Scene{
         this.shadows.add(player.shadow);
 
         let screenshadow = this.add.tileSprite(0,0,this.sys.canvas.width, this.sys.canvas.height,'black').setDepth(0.1).setOrigin(0);
-        screenshadow.alpha=0.4;
+        screenshadow.alpha=0.25;
         //screenshadow.setBlendMode(Phaser.BlendModes.MULTIPLY);
         screenshadow.setScrollFactor(0);
 
         var shadowmask = new Phaser.Display.Masks.BitmapMask(this, this.shadows);
         screenshadow.setMask(shadowmask);
 
+        let clouds = this.add.tileSprite(0,0,this.sys.canvas.width, this.sys.canvas.height, 'clouds');
+        clouds.setScrollFactor(0);
+        clouds.setOrigin(0);
+        this.scrollX=0;
+        this.scrollY=0;
+        this.shadows.add(clouds);
         
+        this.clouds=clouds;
 
         //this.map = this.make.tilemap({tileWidth:32, tileHeight:32, width: tilesdiam, height: tilesdiam});
         //this.tileset = this.map.addTilesetImage('tiles');
@@ -134,10 +185,7 @@ export class Scene extends Phaser.Scene{
         
         this.cameras.main.zoom=1;
         this.cameras.main.startFollow(player, true, 0.1, 0.1);
-        //this.cameras.main.setLerp(0.1,0.1);
-        //this.cameras.main.roundPixels=true;
         //this.cameras.main.setRenderToTexture('Marble');
-        //rendercam.setPipeline('distort');
         
         //this.cameras.main.zoom=2;
         
@@ -178,7 +226,6 @@ export class Scene extends Phaser.Scene{
          }, this);
         
         this.autoPeck = true;
-        
         //console.log(chicken.list)
     }
 
@@ -199,8 +246,10 @@ export class Scene extends Phaser.Scene{
         this.distortPipeline.setFloat1('time', time/10);
         this.distortPipeline2.setFloat1('time', time/10);
         this.marblePipeline.setFloat1('time', time/1000);
-        this.reflecTex.clear();
-        this.reflecTex.draw([this.player,this.player.head], 32,32);
+        this.scrollX-=0.15;
+        this.clouds.tilePositionX=this.cameras.main.scrollX;
+        this.clouds.tilePositionY=this.cameras.main.scrollY;
+        this.rainEmitter.setPosition(this.cameras.main.worldView.x-64, this.cameras.main.worldView.y-64);
     }
     updateChicken(time,delta){
         let accelval = 1500;
@@ -224,8 +273,8 @@ export class Scene extends Phaser.Scene{
         let chickenXreltoCenter = this.player.x-this.cameras.main.midPoint.x;
         let mouseXreltoCenter = this.input.activePointer.x-160;
         
-        let flip = Math.max(chickenXreltoCenter-mouseXreltoCenter, 0);
-        this.player.setFlip(flip, false);
+        let flip = Math.sign(mouseXreltoCenter-chickenXreltoCenter);
+        this.player.setFlip(flip-1, false);
 
         if(this.player.body.speed>=40){
             this.walking = true;

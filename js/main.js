@@ -7,7 +7,7 @@ let config = {
     width: 320, //(320+80)*gameScale,
     height: 240, //(240+80)*gameScale,
     parent: gamediv,
-    pixelArt: true,
+    //pixelArt: true,
     antialias:false,
     roundPixels: true,
     zoom: 2,

@@ -9,23 +9,31 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
         this.loadAnimations();
 
         this.shadow = scene.add.image(x,y,'shadow');
-        //this.reflection = scene.add.image(x,y,'reflect').setDepth(1).setOrigin(0.5,0);
-        this.reflection = scene.add.shader('reflect', x, y+0, 64,64).setDepth(0.5).setOrigin(0.5,0);
+
+        this.reflecTex = this.scene.add.renderTexture(0,0,64,64);
+        this.reflecTex.saveTexture('reflect');
+
+        this.reflection = scene.add.shader('reflect', x, y-5, 64,64).setDepth(0.5).setOrigin(0.5,0);
         this.reflection.setChannel0('reflect');
-        this.reflection.scaleY = 0.66;
         this.reflection.flipY = true;
 
         this.head=scene.add.sprite(x+4,y,'pecksheet_head',0);
         this.head.preUpdate=()=>{};
+        this.headX;
+        this.headY;
+
+        this.emitter=null;
 
         /**
          * this enables the head to move with the body, without being attached to the body
          */
         this.body.postUpdate = ()=>{
             this.body.__proto__.postUpdate.call(this.body);
-            this.head.setPosition(this.x, this.y);
+            this.head.x=this.x+this.headX;
+            this.head.y=this.y+this.headY;
             this.shadow.setPosition(this.x,this.y);
-            this.reflection.setPosition(this.x, this.y+0);
+            this.reflection.setPosition(this.x-1, this.y-5);
+            this.emitter.setPosition(this.x, this.y+13);
         }
 
         this.body.useDamping = true;
@@ -39,6 +47,7 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
         this.clicked=false;
         this.play('stand_body');
         this.head.play('stand_head');
+        this.stepped=false;
     }
 
     loadAnimations(){
@@ -182,14 +191,41 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
         
         this.anims.update(time,delta);
         this.head.anims.update(time,delta);
-
-        let fram=this.anims.currentFrame;
-        let offx = this.flipX? fram.offset.x : -fram.offset.x;
-        this.head.setDisplayOrigin(16+offx, 16-fram.offset.y);
+        //if the frame has changed
+        if(true){
+            this.offset=this.anims.currentFrame.offset;
+            this.headX=(this.flipX+1)*this.offset.x;
+            this.headY=this.offset.y;
+            
+            this.reflecTex.clear();
+            this.reflecTex.draw(this,32,32);
+            this.reflecTex.draw(this.head, 32+this.headX, 32+this.headY);
+        }
+        if(this.emitter !== null){
+            if(!this.stepped){
+                if(this.anims.getCurrentKey()==='walk_body'){
+                    if(this.anims.currentFrame.index==1){
+                        this.emitter.setPosition(this.x+4, this.y+13);
+                        this.emitter.explode();
+                        this.stepped=true;
+                    }else if(this.anims.currentFrame.index==3){
+                        this.emitter.setPosition(this.x-4, this.y+13);
+                        this.emitter.explode();
+                        this.stepped=true; 
+                    }
+                }
+            }else{
+                if(this.anims.getCurrentKey()!=='walk_body' || this.anims.currentFrame.index%2!=1){
+                    this.stepped=false;
+                }
+            }
+        }
     }
     setFlip(flipX, flipY){
         super.setFlip(flipX, flipY);
         this.head.setFlip(flipX,flipY);
+        
+        this.headX=(this.flipX+1)*this.offset.x;
         this.shadow.setFlip(flipX, flipY);
     }
     setMask(mask){
