@@ -49,7 +49,7 @@ export class Scene extends Phaser.Scene{
         if(rainsplat === undefined){
             rainsplat = this.anims.create({
                 key:'splat',
-                frames: this.anims.generateFrameNumbers('particles', {start:0, end: 4}),
+                frames: this.anims.generateFrameNumbers('particles', {start:1, end: 4}),
                 frameRate: 24,
                 repeat:0
             });
@@ -66,8 +66,8 @@ export class Scene extends Phaser.Scene{
             x:0, y:0,
             speed: 0,
             lifespan: 600,
-            quantity:2,
-            frequency:1,
+            quantity:3,
+            frequency:10,
             alpha: {start:0.2,end:0.0},
             scale: 1,
             on:true,
@@ -77,12 +77,13 @@ export class Scene extends Phaser.Scene{
         });
         particles.setDepth(1);
         let stepEmitter = particles.createEmitter({
+            frame:2,
             x:0, y:0,
             speed:0,
-            lifespan: 600,
+            lifespan: 800,
             quantity:1,
             alpha: {start:0.5, end:0.0},
-            scale:2,
+            scale:{start:1, end:2},
             on:false,
             particleClass: DropPart,
             blendMode: 'ADD',
