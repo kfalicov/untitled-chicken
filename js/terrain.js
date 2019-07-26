@@ -11,6 +11,12 @@ export class Chunk{
         this.arr = [];
         this.dirty=false; //should this chunk be saved?
     }
+    getTile(x, y){
+        let newx = ((x%this.scene.chunkSize)+8)%8;
+        let newy = ((y%this.scene.chunkSize)+8)%8;
+        //console.log(this.arr[newy][newx]);
+        return this.arr[newy][newx];
+    }
     unload(){
         if(this.isLoaded){
             this.background.clear(true,true);
@@ -127,7 +133,7 @@ export class Chunk{
                     }
                     //tile.setTint(terrainvariation*0xffffff);
 
-                    row.push(index);
+                    row.push(floor);
                 }
                 this.arr.push(row);
             }
@@ -137,13 +143,5 @@ export class Chunk{
         if(chicken && this.collider===null){
             this.scene.physics.add.collider(chicken, this.collision);
         }
-    }
-}
-class Tile extends Phaser.GameObjects.Sprite{
-    constructor(scene, x, y, key){
-        super(scene, x, y, 'grass', key);
-        this.scene = scene;
-        this.scene.add.existing(this);
-        this.setOrigin(0);
     }
 }

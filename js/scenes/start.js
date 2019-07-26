@@ -201,7 +201,6 @@ export class Scene extends Phaser.Scene{
         })
 
         this.walking=false;
-
         let q = this.input.keyboard.addKey('Q');
         let intensity = 0;
         q.on('down',()=>{
@@ -226,8 +225,42 @@ export class Scene extends Phaser.Scene{
             player.isPecking=false;
          }, this);
         
-        this.autoPeck = true;
         //console.log(chicken.list)
+
+        this.hover = this.add.rectangle(0,0,32,32);
+        this.hover.isStroked = true;
+        this.hover.depth = 10;
+        this.activeTile=null;
+        this.pointerXY = {x:0, y:0};
+        let poin = this.pointerXY;
+        this.hoverTween = this.tweens.add({
+            targets: this.hover,
+            ease: 'Quad.easeOut',
+            props:{
+                x: {
+                    value: {
+                        getEnd: ()=>{
+                            return this.pointerXY.x*this.tileSize+this.tileSize/2;
+                        },
+                        getStart: function(target, key, value){
+                            return this.current;
+                        },
+                    }
+                },
+                y: {
+                    value: {
+                        getEnd: ()=>{
+                            return this.pointerXY.y*this.tileSize+this.tileSize/2;
+                        },
+                        getStart: function(target, key, value){
+                            return this.current;
+                        }  
+                    }
+                }
+            },
+            duration: 100,
+            repeat:0
+        });
     }
 
     getChunk(x, y){
@@ -241,6 +274,30 @@ export class Scene extends Phaser.Scene{
         return chunk;
     }
 
+    lineCast(){
+        let {x, y} = this.cameras.main.getWorldPoint(this.input.activePointer.x, this.input.activePointer.y);
+        //console.log(this.hoverTween.data[0]);
+        let chunkx = Math.floor(x/(this.tileSize*this.chunkSize));
+        let chunky = Math.floor(y/(this.tileSize*this.chunkSize));
+        let tilex = Math.floor(x/this.tileSize);
+        let tiley = Math.floor(y/this.tileSize);
+        if(tilex != this.pointerXY.x || tiley != this.pointerXY.y){
+            this.pointerXY = {x:tilex, y:tiley};
+            //console.log('mouse moved');
+            this.hoverTween.resetTweenData(true);
+            this.hoverTween.play();
+            this.activeTile = this.getChunk(chunkx, chunky).getTile(tilex, tiley);
+        }
+        
+    }
+
+    getChunk(x, y){
+        let newx = x-this.currentChunk.x+this.chunkRadius;
+        let newy = y-this.currentChunk.y+this.chunkRadius;
+        let chunkDiam = (this.chunkRadius * 2) +1;
+        return this.chunks[newy*chunkDiam+newx];
+    }
+
     update(time, delta){
         this.updateChicken(time, delta);
         this.updateChunks(time, delta);
@@ -251,6 +308,12 @@ export class Scene extends Phaser.Scene{
         this.clouds.tilePositionX=this.cameras.main.scrollX;
         this.clouds.tilePositionY=this.cameras.main.scrollY;
         this.rainEmitter.setPosition(this.cameras.main.worldView.x-64, this.cameras.main.worldView.y-64);
+        this.lineCast();
+        if(this.player.isPecking){
+            if(this.activeTile!==null){
+                this.activeTile.setFrame(9);
+            }
+        }
     }
     updateChicken(time,delta){
         let accelval = 1500;
