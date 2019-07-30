@@ -1,12 +1,13 @@
 export class Chicken extends Phaser.Physics.Arcade.Sprite{
-    constructor(scene, x, y){
-        super(scene, x, y, 'pecksheet_body');
+    constructor(scene, x, y, skin){
+        super(scene, x, y, 'key');
 
         this.scene=scene;
         this.scene.add.existing(this);
         this.scene.physics.world.enable(this);
 
-        this.loadAnimations();
+        this.skin = skin;
+        this.loadAnimations(skin);
 
         this.shadow = scene.add.image(x,y,'shadow');
 
@@ -18,9 +19,12 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
         this.reflection.flipY = true;
 
         this.head=scene.add.sprite(x+4,y,'pecksheet_head',0);
+        this.comb=scene.add.image(x+4, y, 'combs', 1);
         this.head.preUpdate=()=>{};
         this.headX;
         this.headY;
+        this.faceX;
+        this.faceY;
 
         this.emitter=null;
 
@@ -31,9 +35,11 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
             this.body.__proto__.postUpdate.call(this.body);
             this.head.x=this.x+this.headX;
             this.head.y=this.y+this.headY;
+            this.comb.x=this.x+this.faceX;
+            this.comb.y=this.y+this.faceY;
             this.shadow.setPosition(this.x,this.y);
             this.reflection.setPosition(this.x-1, this.y-5);
-            this.emitter.setPosition(this.x, this.y+13);
+            //this.emitter.setPosition(this.x, this.y+13);
         }
 
         this.body.useDamping = true;
@@ -45,112 +51,99 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
         this.isMoving=false;
         this.isPecking=false;
         this.clicked=false;
-        this.play('stand_body');
-        this.head.play('stand_head');
+        this.play('stand_body_'+skin);
+        this.head.play('stand_head_'+skin);
         this.stepped=false;
     }
 
-    loadAnimations(){
-        let standframes_body = this.scene.anims.generateFrameNumbers('standsheet_body', {start:0, end: 4});
-        let standframes_head = this.scene.anims.generateFrameNumbers('standsheet_head', {start:0, end: 4});
-        this.standoffsets=[
-            {x:4, y:1},
-            {x:4, y:1},
-            {x:4, y:1},
-            {x:4, y:-1},
-            {x:4, y:-2},
-        ];
+    loadAnimations(skin){
+        //contains data about the locations of the neck and face
+        let coords = this.scene.cache.json.get('chicken_coords');
+        /**
+         * standing animations
+         */
         let sbody = this.scene.anims.create({
-            key: 'stand_body',
-            frames: standframes_body,
+            key: 'stand_body_'+skin,
+            frames: this.scene.anims.generateFrameNames('chicken_body_'+skin, {prefix: 'stand_', start:0, end:4}),
             frameRate: 12,
         });
-        this.scene.anims.create({
-            key: 'stand_head',
-            frames: standframes_head,
+        let shead = this.scene.anims.create({
+            key: 'stand_head_'+skin,
+            frames: this.scene.anims.generateFrameNames('chicken_head_'+skin, {prefix: 'stand_', start:0, end:4}),
             frameRate: 12,
         });
         for(let i=0;i<sbody.frames.length;i++){
-            sbody.frames[i].offset=this.standoffsets[i];
+            sbody.frames[i].offset=coords.stand_neck[i];
+            shead.frames[i].offset=coords.stand_face[i];
         }
-
-        let peckframes_body = this.scene.anims.generateFrameNumbers('pecksheet_body', {start:0, end: 4});
-        let peckframes_head = this.scene.anims.generateFrameNumbers('pecksheet_head', {start:0, end: 4});
-        peckframes_body[1].duration = 10;
-        peckframes_body[4].duration = 30;
-        peckframes_head[1].duration = 10;
-        peckframes_head[4].duration = 30;
-        this.peckoffsets=[
-            {x:4,y:-4},
-            {x:4,y:-2},
-            {x:4,y:-1},
-            {x:4,y:-2},
-            {x:4,y:-3}
-        ];
+        /**
+         * pecking animations
+         */
         let pbody = this.scene.anims.create({
-            key: 'peck_body',
-            frames: peckframes_body,
+            key: 'peck_body_'+skin,
+            frames: this.scene.anims.generateFrameNames('chicken_body_'+skin, {prefix: 'peck_', start:0, end:4}),
             frameRate: 30,
         });
-        this.scene.anims.create({
-            key: 'peck_head',
-            frames: peckframes_head,
+        let phead = this.scene.anims.create({
+            key: 'peck_head_'+skin,
+            frames: this.scene.anims.generateFrameNames('chicken_head_'+skin, {prefix: 'peck_', start:0, end:4}),
             frameRate: 30,
         });
         for(let i=0;i<pbody.frames.length;i++){
-            pbody.frames[i].offset=this.peckoffsets[i];
+            pbody.frames[i].offset=coords.peck_neck[i];
+            phead.frames[i].offset=coords.peck_face[i];
         }
-        
-        let walkframes_body = this.scene.anims.generateFrameNumbers('walksheet_body', {frames: [0,1,0,2]});
-        let walkframes_head = this.scene.anims.generateFrameNumbers('walksheet_head', {frames: [0,1,0,1]});
-        walkframes_body[1].duration = 50;
-        walkframes_body[3].duration = 50;
-        walkframes_head[1].duration = 50;
-        walkframes_head[3].duration = 50;
-        this.walkoffsets=[
-            {x:4, y:-3},
-            {x:4, y:-4},
-        ];
+        pbody.frames[1].duration=10;
+        pbody.frames[4].duration=30;
+        phead.frames[1].duration=10;
+        phead.frames[4].duration=30;
+        /**
+         * walking animations
+         */
         let wbody = this.scene.anims.create({
-            key: 'walk_body',
-            frames: walkframes_body,
+            key: 'walk_body_'+skin,
+            frames: this.scene.anims.generateFrameNames('chicken_body_'+skin, {prefix: 'walk_', frames:[0,1,0,2]}),
             frameRate: 15,
         });
-        this.scene.anims.create({
-            key: 'walk_head',
-            frames: walkframes_head,
+        let whead = this.scene.anims.create({
+            key: 'walk_head_'+skin,
+            frames: this.scene.anims.generateFrameNames('chicken_head_'+skin, {prefix: 'walk_', frames:[0,1,0,1]}),
             frameRate: 15,
         });
         for(let i=0;i<wbody.frames.length;i++){
-            wbody.frames[i].offset=this.walkoffsets[i%2];
+            wbody.frames[i].offset=coords.walk_neck[i%2];
+            whead.frames[i].offset=coords.walk_face[i%2];
+            if(i%2!==0){
+                wbody.frames[i].duration=50;   
+                whead.frames[i].duration=50;
+            }
         }
-
         
     }
 
     preUpdate(time, delta){
-        
+        let skin = this.skin;
         if(this.isMoving){
             if(this.isPecking){
-                this.play('walk_body', true);
+                this.play('walk_body_'+skin, true);
                 if(this.clicked){
                     this.clicked=false;
-                    this.head.play('peck_head');
+                    this.head.play('peck_head_'+skin);
                 }
-                this.head.play('peck_head', true);
+                this.head.play('peck_head_'+skin, true);
             }else{
                 
-                this.play('walk_body', true); 
+                this.play('walk_body_'+skin, true); 
                 //sync walking head with walking body when head stops pecking
-                if(this.head.anims.getCurrentKey()==='peck_head'){
+                if(this.head.anims.getCurrentKey()==='peck_head_'+skin){
                     if(this.head.anims.getProgress()<1 || (this.anims.currentFrame.index%2==0)){
                         //do nothing, wait for headbanging to finish and for sync frame
                     }else{
-                        this.head.play('walk_head');
-                        this.play('walk_body');
+                        this.head.play('walk_head_'+skin);
+                        this.play('walk_body_'+skin);
                     }
                 }else{
-                    this.head.play('walk_head', true); 
+                    this.head.play('walk_head_'+skin, true); 
                 }
             }
             
@@ -158,33 +151,33 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
             if(this.isPecking){
                 if(this.clicked){
                     this.clicked=false;
-                    this.head.play('peck_head');
-                    this.play('peck_body');
+                    this.head.play('peck_head_'+skin);
+                    this.play('peck_body_'+skin);
                 }
-                this.head.play('peck_head',true);
+                this.head.play('peck_head_'+skin,true);
                 //sync pecking body with pecking head when stop walking
-                if(this.anims.getCurrentKey()!=='peck_body'){
+                if(this.anims.getCurrentKey()!=='peck_body_'+skin){
                     if(this.head.anims.getProgress()<1 || this.head.anims.accumulator+delta<this.head.anims.nextTick){
                         //do nothing, wait for headbanging to finish and for sync frame
-                        this.play('walk_body');
+                        this.play('walk_body_'+skin);
                     }else{
-                        this.play('peck_body');
-                        this.head.play('peck_head');
+                        this.play('peck_body_'+skin);
+                        this.head.play('peck_head_'+skin);
                     }
                 }else{
-                    this.play('peck_body',true);
+                    this.play('peck_body_'+skin,true);
                 }
             }else{
-                if(this.head.anims.getCurrentKey()==='peck_head'){
+                if(this.head.anims.getCurrentKey()==='peck_head_'+skin){
                     if(this.head.anims.getProgress()<1 || this.head.anims.accumulator+delta<this.head.anims.nextTick){
                         //do nothing, wait for headbanging to finish and for sync frame
                     }else{
-                        this.play('stand_body');
-                        this.head.play('stand_head');
+                        this.play('stand_body_'+skin);
+                        this.head.play('stand_head_'+skin);
                     }
                 }else{
-                    this.play('stand_body',true);
-                    this.head.play('stand_head',true);
+                    this.play('stand_body_'+skin,true);
+                    this.head.play('stand_head_'+skin,true);
                 }
             }
         }
@@ -193,17 +186,26 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
         this.head.anims.update(time,delta);
         //if the frame has changed
         if(true){
-            this.offset=this.anims.currentFrame.offset;
-            this.headX=(this.flipX+1)*this.offset.x;
-            this.headY=this.offset.y;
+            this.headoffset=this.anims.currentFrame.offset;
+            this.headX=(this.flipX+1)*this.headoffset.x;
+            this.headY=this.headoffset.y;
+            this.faceoffset=this.head.anims.currentFrame.offset;
+            this.faceX =(this.flipX+1)*(this.headoffset.x+this.faceoffset.x);
+            this.faceY=this.headoffset.y+this.faceoffset.y;
             
             this.reflecTex.clear();
             this.reflecTex.draw(this,32,32);
             this.reflecTex.draw(this.head, 32+this.headX, 32+this.headY);
+            if(this.head.anims.getCurrentKey()!=='peck_head_'+skin){
+                this.comb.visible=true;
+                this.reflecTex.draw(this.comb, 32+this.faceX, 32+this.faceY)
+            }else{
+                this.comb.visible=false;
+            }
         }
         if(this.emitter !== null){
             if(!this.stepped){
-                if(this.anims.getCurrentKey()==='walk_body'){
+                if(this.anims.getCurrentKey()==='walk_body_'+skin){
                     if(this.anims.currentFrame.index==1){
                         this.emitter.setPosition(this.x+4+this.body.deltaX(), this.y+13+this.body.deltaY());
                         this.emitter.explode();
@@ -213,12 +215,12 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
                         this.emitter.explode();
                         this.stepped=true; 
                     }
-                }else if(this.anims.getCurrentKey()==='stand_body'){
+                }else if(this.anims.getCurrentKey()==='stand_body_'+skin){
                     this.emitter.explode();
                     this.stepped=true;
                 }
             }else{
-                if(this.anims.getCurrentKey()==='walk_body' && this.anims.currentFrame.index%2!=1){
+                if(this.anims.getCurrentKey()==='walk_body_'+skin && this.anims.currentFrame.index%2!=1){
                     this.stepped=false;
                 }
             }
@@ -226,9 +228,11 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
     }
     setFlip(flipX, flipY){
         super.setFlip(flipX, flipY);
-        this.head.setFlip(flipX,flipY);
+        this.head.setFlip(flipX, flipY);
+        this.comb.setFlip(flipX, flipY);
         
-        this.headX=(this.flipX+1)*this.offset.x;
+        this.headX=(this.flipX+1)*this.headoffset.x;
+        this.faceX=(this.flipX+1)*(this.headoffset.x+this.faceoffset.x);
         this.shadow.setFlip(flipX, flipY);
     }
     setMask(mask){
@@ -238,6 +242,10 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
     setDepth(depth){
         super.setDepth(depth);
         this.head.setDepth(depth);
+        this.comb.setDepth(depth);
+    }
+    setAppearance(combindex){
+        this.comb.setFrame(combindex);
     }
     setPipeline(){
 

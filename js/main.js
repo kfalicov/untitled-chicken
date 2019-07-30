@@ -1,5 +1,5 @@
-import {Scene} from './scenes/start.js';
-
+import { MainMenu } from './scenes/MainMenu.js';
+import {World} from './scenes/World.js';
 let gameScale=2;
 
 let config = {
@@ -11,6 +11,9 @@ let config = {
     antialias:false,
     roundPixels: true,
     zoom: 2,
+    plugins: {
+        
+    },
     physics: {
         default: 'arcade',
         arcade: {
@@ -20,7 +23,7 @@ let config = {
     },
     transparent: true,
     //scene: ClassicMode //use this to test specific scenes directly
-    scene: [Scene]
+    scene: [MainMenu, World]
 };
 
 let game = new Phaser.Game(config);

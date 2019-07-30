@@ -2,25 +2,20 @@ import { Chunk } from "../terrain.js";
 import {AnimatedParticle} from "../particle.js";
 import { GrayscalePipeline, DistortPipeline, BloomPipeline, DistortPipeline2 } from "../shader/pipelines.js";
 import { Chicken } from "../chicken.js";
+import Cursor from "../cursor.js";
 
 let gameScale=2;
 
-export class Scene extends Phaser.Scene{
+export class World extends Phaser.Scene{
     constructor()
     {
-        super('Scene');
+        super('World');
     }
-    preload(){
+    preload(){        
+        this.load.json('chicken_coords', 'assets/chicken_coords.json');
         this.load.image('shadow', 'assets/chicken/shadow.png');
         this.load.image('black', 'assets/black.png');
         this.load.image('treetop', 'assets/terrain/treetop.png');
-        this.load.spritesheet('standsheet_body', 'assets/chicken/stand_body.png', { frameWidth: 32, frameHeight: 32, endFrame: 4 });
-        this.load.spritesheet('standsheet_head', 'assets/chicken/stand_head.png', { frameWidth: 32, frameHeight: 32, endFrame: 4 });
-        //this.load.spritesheet('walksheet_body', 'assets/chicken/walk_headless.png', { frameWidth: 32, frameHeight: 32, endFrame: 2 });
-        this.load.spritesheet('walksheet_body', 'assets/chicken/walk_body.png', { frameWidth: 32, frameHeight: 32, endFrame: 2 });
-        this.load.spritesheet('walksheet_head', 'assets/chicken/walk_head.png', { frameWidth: 32, frameHeight: 32, endFrame: 1 });
-        this.load.spritesheet('pecksheet_body', 'assets/chicken/peck_body.png', { frameWidth: 32, frameHeight: 32, endFrame: 4 });
-        this.load.spritesheet('pecksheet_head', 'assets/chicken/peck_head.png', { frameWidth: 32, frameHeight: 32, endFrame: 4 });
         this.load.atlas('grass', 'assets/grass_tiles.png', 'assets/grass_tiles.json');
         //this.load.image('tiles', 'assets/grass_tiles.png');
         this.load.spritesheet('tiles_16', 'assets/terrain/16_terrain.png', { frameWidth: 16, frameHeight: 16 });
@@ -29,10 +24,12 @@ export class Scene extends Phaser.Scene{
         this.load.glsl('reflect', 'js/shader/reflect.frag', 'fragment');
         this.load.glsl('marblefrag', 'js/shader/marble.frag', 'fragment');
         this.load.glsl('pad', 'js/shader/pad.vs', 'vertex');
+        this.load.glsl('paletteswap', 'js/shader/paletteswap.fs', 'fragment');
         this.load.image('clouds', 'assets/clouds2.png');
+        this.load.spritesheet('arrow', 'assets/arrow.png',{frameWidth:8, frameHeight:9});
         this.load.spritesheet('particles', 'assets/particle.png',{frameWidth:16, frameHeight:16});
     }
-    create(){
+    create(data){
         /**
          * initialize world
          */
@@ -89,9 +86,10 @@ export class Scene extends Phaser.Scene{
             blendMode: 'ADD',
         });
 
-        let player = new Chicken(this, 0,0);
+        let player = new Chicken(this, 0,0,data.chickenColor);
         player.emitter = stepEmitter;
         player.setDepth(2);
+        player.setAppearance(data.chickenType);
         this.player=player;
 
         this.shadows = this.add.container(0,0);
@@ -107,6 +105,9 @@ export class Scene extends Phaser.Scene{
 
         let clouds = this.add.tileSprite(0,0,this.sys.canvas.width, this.sys.canvas.height, 'clouds');
         clouds.setScrollFactor(0);
+        clouds.tileScaleX = 2;
+        clouds.tileScaleY = 2;
+
         clouds.setOrigin(0);
         this.scrollX=0;
         this.scrollY=0;
@@ -166,19 +167,6 @@ export class Scene extends Phaser.Scene{
         /**
          * initialize player animations
          */
-        let standframes_body = this.anims.generateFrameNumbers('standsheet_body', {start:0, end: 4});
-        let walkframes_headless = this.anims.generateFrameNumbers('walksheet_body', {frames: [0,1,0,2]});
-        let peckframes_body = this.anims.generateFrameNumbers('pecksheet_body', {start:0, end: 4});
-        let walkframes_body = this.anims.generateFrameNumbers('walksheet_body', {frames: [0,1,0,2]});
-        let peckframes_head = this.anims.generateFrameNumbers('pecksheet_head', {start:0, end: 4});
-        walkframes_headless[1].duration = 50;
-        walkframes_headless[3].duration = 50;
-        walkframes_body[1].duration = 50;
-        walkframes_body[3].duration = 50;
-        peckframes_body[1].duration = 10;
-        peckframes_body[4].duration = 30;
-        peckframes_head[1].duration = 10;
-        peckframes_head[4].duration = 30;
 
         this.cameras.main.setBackgroundColor('#aaaaaa');
 
@@ -225,42 +213,16 @@ export class Scene extends Phaser.Scene{
             player.isPecking=false;
          }, this);
         
-        //console.log(chicken.list)
-
-        this.hover = this.add.rectangle(0,0,32,32);
-        this.hover.isStroked = true;
-        this.hover.depth = 10;
         this.activeTile=null;
         this.pointerXY = {x:0, y:0};
-        let poin = this.pointerXY;
-        this.hoverTween = this.tweens.add({
-            targets: this.hover,
-            ease: 'Quad.easeOut',
-            props:{
-                x: {
-                    value: {
-                        getEnd: ()=>{
-                            return this.pointerXY.x*this.tileSize+this.tileSize/2;
-                        },
-                        getStart: function(target, key, value){
-                            return this.current;
-                        },
-                    }
-                },
-                y: {
-                    value: {
-                        getEnd: ()=>{
-                            return this.pointerXY.y*this.tileSize+this.tileSize/2;
-                        },
-                        getStart: function(target, key, value){
-                            return this.current;
-                        }  
-                    }
-                }
-            },
-            duration: 100,
-            repeat:0
-        });
+        let selecting = true;
+        
+        this.cursor = new Cursor(this, 0,0);
+        this.cursor.setSelecting(selecting);
+        this.input.on('wheel', ()=>{
+            selecting = !selecting;
+            this.cursor.setSelecting(selecting);
+        })
     }
 
     getChunk(x, y){
@@ -276,6 +238,7 @@ export class Scene extends Phaser.Scene{
 
     lineCast(){
         let {x, y} = this.cameras.main.getWorldPoint(this.input.activePointer.x, this.input.activePointer.y);
+        this.cursor.setMousePos({x,y});
         //console.log(this.hoverTween.data[0]);
         let chunkx = Math.floor(x/(this.tileSize*this.chunkSize));
         let chunky = Math.floor(y/(this.tileSize*this.chunkSize));
@@ -283,12 +246,8 @@ export class Scene extends Phaser.Scene{
         let tiley = Math.floor(y/this.tileSize);
         if(tilex != this.pointerXY.x || tiley != this.pointerXY.y){
             this.pointerXY = {x:tilex, y:tiley};
-            //console.log('mouse moved');
-            this.hoverTween.resetTweenData(true);
-            this.hoverTween.play();
             this.activeTile = this.getChunk(chunkx, chunky).getTile(tilex, tiley);
         }
-        
     }
 
     getChunk(x, y){
@@ -305,8 +264,9 @@ export class Scene extends Phaser.Scene{
         this.distortPipeline2.setFloat1('time', time/10);
         this.marblePipeline.setFloat1('time', time/1000);
         this.scrollX-=0.15;
-        this.clouds.tilePositionX=this.cameras.main.scrollX;
-        this.clouds.tilePositionY=this.cameras.main.scrollY;
+        this.scrollY-=0.02;
+        this.clouds.tilePositionX=this.cameras.main.scrollX/2+this.scrollX;
+        this.clouds.tilePositionY=this.cameras.main.scrollY/2+this.scrollY;
         this.rainEmitter.setPosition(this.cameras.main.worldView.x-64, this.cameras.main.worldView.y-64);
         this.lineCast();
         if(this.player.isPecking){
@@ -314,6 +274,7 @@ export class Scene extends Phaser.Scene{
                 this.activeTile.setFrame(9);
             }
         }
+        this.cursor.update(time);
     }
     updateChicken(time,delta){
         let accelval = 1500;
