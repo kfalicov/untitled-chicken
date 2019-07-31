@@ -25,6 +25,7 @@ export class World extends Phaser.Scene{
         this.load.glsl('marblefrag', 'js/shader/marble.frag', 'fragment');
         this.load.glsl('pad', 'js/shader/pad.vs', 'vertex');
         this.load.glsl('paletteswap', 'js/shader/paletteswap.fs', 'fragment');
+        this.load.glsl('outline', 'js/shader/outline.fs', 'fragment');
         this.load.image('clouds', 'assets/clouds2.png');
         this.load.spritesheet('arrow', 'assets/arrow.png',{frameWidth:8, frameHeight:9});
         this.load.spritesheet('particles', 'assets/particle.png',{frameWidth:16, frameHeight:16});
@@ -223,6 +224,9 @@ export class World extends Phaser.Scene{
             selecting = !selecting;
             this.cursor.setSelecting(selecting);
         })
+
+        this.foreground=this.add.container().setDepth(2);
+        this.player.outline.setMask(new Phaser.Display.Masks.BitmapMask(this, this.foreground));
     }
 
     getChunk(x, y){
@@ -371,12 +375,13 @@ export class World extends Phaser.Scene{
                     this.chunks.shift().unload();
                 }
             }
-            
+            this.foreground.removeAll();
             for(let i=0;i<chunkDiameter;i++){
                 for(let j=0;j<chunkDiameter;j++){
-                    this.chunks[(i*chunkDiameter)+j].foreground.setDepth(i+2);
+                    this.foreground.add(this.chunks[(i*chunkDiameter)+j].foreground);
                 }
             }
+            this.player.outline.setMask(new Phaser.Display.Masks.BitmapMask(this, this.foreground));
             this.currentChunk = {x: snappedChunkX, y: snappedChunkY};
         }
     }

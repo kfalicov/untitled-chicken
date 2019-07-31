@@ -11,15 +11,17 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
 
         this.shadow = scene.add.image(x,y,'shadow');
 
-        this.reflecTex = this.scene.add.renderTexture(0,0,64,64);
-        this.reflecTex.saveTexture('reflect');
+        this.chickenTex = this.scene.add.renderTexture(0,0,64,64);
+        this.chickenTex.saveTexture('chickenTex');
 
-        this.reflection = scene.add.shader('reflect', x, y-5, 64,64).setDepth(0.5).setOrigin(0.5,0);
-        this.reflection.setChannel0('reflect');
-        this.reflection.flipY = true;
+        this.reflection = scene.add.shader('reflect', x-1, y-5, 64,64).setDepth(0.5).setOrigin(0.5,0);
+        this.reflection.setChannel0('chickenTex');
+
+        this.outline = scene.add.shader('outline', x, y, 64,64).setDepth(10);
+        this.outline.setChannel0('chickenTex');
 
         this.head=scene.add.sprite(x+4,y,'pecksheet_head',0);
-        this.comb=scene.add.image(x+4, y, 'combs', 1);
+        this.comb=scene.add.image(x+4, y, 'combs', 'comb_1');
         this.head.preUpdate=()=>{};
         this.headX;
         this.headY;
@@ -38,6 +40,7 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
             this.comb.x=this.x+this.faceX;
             this.comb.y=this.y+this.faceY;
             this.shadow.setPosition(this.x,this.y);
+            this.outline.setPosition(this.x-1, this.y+1);
             this.reflection.setPosition(this.x-1, this.y-5);
             //this.emitter.setPosition(this.x, this.y+13);
         }
@@ -193,12 +196,12 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
             this.faceX =(this.flipX+1)*(this.headoffset.x+this.faceoffset.x);
             this.faceY=this.headoffset.y+this.faceoffset.y;
             
-            this.reflecTex.clear();
-            this.reflecTex.draw(this,32,32);
-            this.reflecTex.draw(this.head, 32+this.headX, 32+this.headY);
+            this.chickenTex.clear();
+            this.chickenTex.draw(this,32,32);
+            this.chickenTex.draw(this.head, 32+this.headX, 32+this.headY);
             if(this.head.anims.getCurrentKey()!=='peck_head_'+skin){
                 this.comb.visible=true;
-                this.reflecTex.draw(this.comb, 32+this.faceX, 32+this.faceY)
+                this.chickenTex.draw(this.comb, 32+this.faceX, 32+this.faceY)
             }else{
                 this.comb.visible=false;
             }
@@ -245,7 +248,7 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
         this.comb.setDepth(depth);
     }
     setAppearance(combindex){
-        this.comb.setFrame(combindex);
+        this.comb.setFrame('comb_'+combindex);
     }
     setPipeline(){
 

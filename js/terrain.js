@@ -5,7 +5,7 @@ export class Chunk{
         this.y = y;
         this.background = this.scene.add.group();
         this.collision = this.scene.physics.add.staticGroup();
-        this.foreground = this.scene.add.group();
+        this.foreground = this.scene.add.container().setDepth(2);
         this.collider = null;
         this.isLoaded = false;
         this.arr = [];
@@ -21,7 +21,7 @@ export class Chunk{
         if(this.isLoaded){
             this.background.clear(true,true);
             this.collision.clear(true,true);
-            this.foreground.clear(true,true);
+            this.foreground.removeAll(true);
             if(this.collider!==null){
                 this.collider.destroy();
             }
@@ -121,7 +121,7 @@ export class Chunk{
                         //treeoffsetx=1-Math.abs(treeoffsetx);
                         let offX = Math.min(Math.max(Math.round(treeoffsetx*8)*2, -8), 8);
                         let offY = Math.min(Math.max(Math.round(treeoffsety*8)*2, -8), 8);
-                        var stump = this.scene.add.image(tileX+16+offX, tileY+16+offY, 'tiles_16',1).setDepth(1);
+                        var stump = this.scene.add.image(tileX+16+offX, tileY+16+offY, 'tiles_16',1);
                         this.collision.add(stump);
                         let i;
                         for(i=0;i<treeHeight;i++){

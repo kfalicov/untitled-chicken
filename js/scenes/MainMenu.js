@@ -8,9 +8,9 @@ export class MainMenu extends Phaser.Scene{
         for(let i=0;i<5;i++){
             this.load.atlas('chicken_body_'+i, 'assets/chicken/body_'+i+'.png', 'assets/chicken/body.json');
             this.load.atlas('chicken_head_'+i, 'assets/chicken/head_'+i+'.png', 'assets/chicken/head.json');
-            this.load.spritesheet('combs', 'assets/chicken/combs.png', {frameWidth:32, frameHeight:32});
-        
         }
+        this.load.atlas('combs', 'assets/chicken/combs.png', 'assets/chicken/combs.json');
+        
     }
     selectChicken = function(chicken){
         this.chickenGroup.remove(chicken);
@@ -57,11 +57,10 @@ export class MainMenu extends Phaser.Scene{
             });
             if(chicken){
                 newchicken.draw(chicken, 16,16);
-                console.log(this.textures.list);
-                newchicken.draw(this.textures.list.combs.frames[i],8,-7)
+                newchicken.draw(this.textures.list.combs.frames['comb_'+i],17,2);
                 let index=i;
                 newchicken.on('pointerdown',()=>{
-                    console.log(index)
+                    //console.log(index)
                     let data = {
                         chickenColor: chicken.index,
                         chickenType: index,
