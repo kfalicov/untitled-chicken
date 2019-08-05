@@ -1,4 +1,4 @@
-import { DropSplash } from "./particle";
+import { DropSplash } from "./particle.js";
 
 export class WeatherSystem{
     constructor(scene){
