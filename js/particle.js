@@ -7,6 +7,7 @@ export class AnimatedParticle extends Phaser.GameObjects.Particles.Particle
         this.t = 0;
         this.i = 0;
         this.anim = anim;
+
     }
 
     update (delta, step, processors)
@@ -32,5 +33,21 @@ export class AnimatedParticle extends Phaser.GameObjects.Particles.Particle
         }
 
         return result;
+    }
+}
+
+export class DropSplash extends AnimatedParticle{
+    constructor(emitter){
+        let scene = emitter.manager.scene;
+        var rainsplat = scene.anims.get('rainsplat');
+        if(rainsplat === undefined){
+            rainsplat = scene.anims.create({
+                key:'splat',
+                frames: scene.anims.generateFrameNumbers('particles', {start:1, end: 4}),
+                frameRate: 24,
+                repeat:0
+            });
+        }
+        super(emitter, rainsplat);
     }
 }

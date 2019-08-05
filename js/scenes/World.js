@@ -3,6 +3,7 @@ import {AnimatedParticle} from "../particle.js";
 import { GrayscalePipeline, DistortPipeline, BloomPipeline, DistortPipeline2 } from "../shader/pipelines.js";
 import { Chicken } from "../chicken.js";
 import Cursor from "../cursor.js";
+import {WeatherSystem} from "../WeatherSystem.js";
 
 let gameScale=2;
 
@@ -43,60 +44,26 @@ export class World extends Phaser.Scene{
         let chunkdiam = (2*this.chunkRadius)+1;
         let tilesdiam = chunkdiam*this.chunkSize;
 
-        var rainsplat = this.anims.get('rainsplat');
-        if(rainsplat === undefined){
-            rainsplat = this.anims.create({
-                key:'splat',
-                frames: this.anims.generateFrameNumbers('particles', {start:1, end: 4}),
-                frameRate: 24,
-                repeat:0
-            });
-        }
-        class DropPart extends AnimatedParticle{
-            constructor(emitter){
-                super(emitter, rainsplat);
-            }
-        }
-        let particles = this.add.particles('particles');
-        let screenRect=new Phaser.Geom.Rectangle(0,0,this.sys.canvas.width+128, this.sys.canvas.height+128);
-        this.rainEmitter = particles.createEmitter({
-            //frame:0,
-            x:0, y:0,
-            speed: 0,
-            lifespan: 600,
-            quantity:3,
-            frequency:10,
-            alpha: {start:0.2,end:0.0},
-            scale: 1,
-            on:true,
-            emitZone: {type: 'random', source:screenRect},
-            particleClass: DropPart,
-            blendMode: 'ADD',
-        });
-        particles.setDepth(1);
-        let stepEmitter = particles.createEmitter({
-            frame:2,
-            x:0, y:0,
-            speed:0,
-            lifespan: 800,
-            quantity:1,
-            alpha: {start:0.5, end:0.0},
-            scale:{start:1, end:2},
-            on:false,
-            particleClass: DropPart,
-            blendMode: 'ADD',
-        });
+        let weather = new WeatherSystem(this);
+        this.weather=weather;
 
+        this.background = this.add.container();
+        let screenshadow = this.add.tileSprite(0,0,this.sys.canvas.width, this.sys.canvas.height,'black').setOrigin(0);
+        this.weatherlayer = this.add.container();
+        this.collisionlayer = this.add.container();
         let player = new Chicken(this, 0,0,data.chickenColor);
-        player.emitter = stepEmitter;
-        player.setDepth(2);
+        this.foreground = this.add.container();
+        this.overlay = this.add.container();
+        //player.emitter = stepEmitter;
+        //player.setDepth(2);
         player.setAppearance(data.chickenType);
         this.player=player;
 
-        this.shadows = this.add.container(0,0);
+        this.shadows = this.add.container().setVisible(false);
         this.shadows.add(player.shadow);
 
-        let screenshadow = this.add.tileSprite(0,0,this.sys.canvas.width, this.sys.canvas.height,'black').setDepth(0.1).setOrigin(0);
+        this.weatherlayer.add(player.reflection);
+
         screenshadow.alpha=0.25;
         //screenshadow.setBlendMode(Phaser.BlendModes.MULTIPLY);
         screenshadow.setScrollFactor(0);
@@ -104,6 +71,7 @@ export class World extends Phaser.Scene{
         var shadowmask = new Phaser.Display.Masks.BitmapMask(this, this.shadows);
         screenshadow.setMask(shadowmask);
 
+        this.weatherlayer.add(weather.getBackground());
         let clouds = this.add.tileSprite(0,0,this.sys.canvas.width, this.sys.canvas.height, 'clouds');
         clouds.setScrollFactor(0);
         clouds.tileScaleX = 2;
@@ -162,6 +130,9 @@ export class World extends Phaser.Scene{
                 //this.groundlayer.putTilesAt(newChunk.arr,chunkoffset+this.chunkSize*x, chunkoffset+this.chunkSize*y);
                 this.chunks.push(newChunk);
                 newChunk.load();
+                
+                this.background.add(newChunk.background.getChildren());
+                this.collisionlayer.add(newChunk.collision.getChildren());
             }
         }
 
@@ -225,8 +196,8 @@ export class World extends Phaser.Scene{
             this.cursor.setSelecting(selecting);
         })
 
-        this.foreground=this.add.container().setDepth(2);
         this.player.outline.setMask(new Phaser.Display.Masks.BitmapMask(this, this.foreground));
+        this.overlay.add(this.player.outline);
     }
 
     getChunk(x, y){
@@ -271,7 +242,7 @@ export class World extends Phaser.Scene{
         this.scrollY-=0.02;
         this.clouds.tilePositionX=this.cameras.main.scrollX/2+this.scrollX;
         this.clouds.tilePositionY=this.cameras.main.scrollY/2+this.scrollY;
-        this.rainEmitter.setPosition(this.cameras.main.worldView.x-64, this.cameras.main.worldView.y-64);
+        this.weather.setPosition(this.cameras.main.worldView.x-64, this.cameras.main.worldView.y-64);
         this.lineCast();
         if(this.player.isPecking){
             if(this.activeTile!==null){
@@ -375,10 +346,14 @@ export class World extends Phaser.Scene{
                     this.chunks.shift().unload();
                 }
             }
+            this.background.removeAll();
+            this.collisionlayer.removeAll();
             this.foreground.removeAll();
             for(let i=0;i<chunkDiameter;i++){
                 for(let j=0;j<chunkDiameter;j++){
-                    this.foreground.add(this.chunks[(i*chunkDiameter)+j].foreground);
+                    this.background.add(this.chunks[(i*chunkDiameter)+j].background.getChildren());
+                    this.collisionlayer.add(this.chunks[(i*chunkDiameter)+j].collision.getChildren());
+                    this.foreground.add(this.chunks[(i*chunkDiameter)+j].foreground.getChildren());
                 }
             }
             this.player.outline.setMask(new Phaser.Display.Masks.BitmapMask(this, this.foreground));

@@ -37,7 +37,7 @@ export class MainMenu extends Phaser.Scene{
         let group = this.add.group();
         let timeline=this.tweens.createTimeline();
         for(let i=0;i<5;i++){
-            let newchicken = this.add.renderTexture(0,0,32,32).setOrigin(0.5).setInteractive();
+            let newchicken = this.add.renderTexture(0,0,32,32).setOrigin(0.5).disableInteractive();
             newchicken.alpha=0;
             newchicken.setTintFill(0xffffff);
             newchicken.on('pointerover', function(pointer){
@@ -88,13 +88,14 @@ export class MainMenu extends Phaser.Scene{
             group.add(newchicken);
         }
         
-        timeline.once('complete',()=>this.makeWheelVisible(group), this)
+        timeline.once('complete',()=>this.makeWheelVisible(group), this);
         timeline.play();
         return group;
     }
     makeWheelVisible(group){
         group.getChildren().forEach(element => {
             element.clearTint();
+            element.setInteractive();
         });
         this.tweens.add({
             targets:group.getChildren(),
@@ -103,7 +104,8 @@ export class MainMenu extends Phaser.Scene{
         })
     }
     create(){
-        
+        this.input.setPollAlways();
+
         this.add.tileSprite(0,0,320,240,'key').setOrigin(0).setAlpha(0.5);
         let centerX = this.sys.canvas.width/2;
         let centerY = this.sys.canvas.height/2;

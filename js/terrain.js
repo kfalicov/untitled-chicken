@@ -5,7 +5,7 @@ export class Chunk{
         this.y = y;
         this.background = this.scene.add.group();
         this.collision = this.scene.physics.add.staticGroup();
-        this.foreground = this.scene.add.container().setDepth(2);
+        this.foreground = this.scene.add.group();
         this.collider = null;
         this.isLoaded = false;
         this.arr = [];
@@ -19,9 +19,9 @@ export class Chunk{
     }
     unload(){
         if(this.isLoaded){
-            this.background.clear(true,true);
+            this.background.clear(true, true);
             this.collision.clear(true,true);
-            this.foreground.removeAll(true);
+            this.foreground.clear(true,true);
             if(this.collider!==null){
                 this.collider.destroy();
             }

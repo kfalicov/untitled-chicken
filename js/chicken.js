@@ -7,22 +7,22 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
         this.scene.physics.world.enable(this);
 
         this.skin = skin;
+        this.head=scene.add.sprite(x+4,y,'pecksheet_head',0);
+        this.comb=scene.add.image(x+4, y, 'combs', 'comb_1');
+        this.head.preUpdate=()=>{};
         this.loadAnimations(skin);
 
         this.shadow = scene.add.image(x,y,'shadow');
 
-        this.chickenTex = this.scene.add.renderTexture(0,0,64,64);
+        this.chickenTex = this.scene.add.renderTexture(0,0,64,64).setVisible(false);
         this.chickenTex.saveTexture('chickenTex');
 
-        this.reflection = scene.add.shader('reflect', x-1, y-5, 64,64).setDepth(0.5).setOrigin(0.5,0);
+        this.reflection = scene.add.shader('reflect', x-1, y-5, 64,64).setOrigin(0.5,0);
         this.reflection.setChannel0('chickenTex');
 
-        this.outline = scene.add.shader('outline', x, y, 64,64).setDepth(10);
+        this.outline = scene.add.shader('outline', x, y, 64,64);
         this.outline.setChannel0('chickenTex');
 
-        this.head=scene.add.sprite(x+4,y,'pecksheet_head',0);
-        this.comb=scene.add.image(x+4, y, 'combs', 'comb_1');
-        this.head.preUpdate=()=>{};
         this.headX;
         this.headY;
         this.faceX;
@@ -121,7 +121,37 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
                 whead.frames[i].duration=50;
             }
         }
-        
+        this.headoffset = {x:0,y:0};
+        this.faceoffset = {x:0,y:0};
+        function update(time, delta)
+        {
+            if (!this.currentAnim || !this.isPlaying || this.currentAnim.paused)
+            {
+                return;
+            }
+    
+            this.accumulator += delta * this._timeScale;
+    
+            if (this._pendingStop === 1)
+            {
+                this._pendingStopValue -= delta;
+    
+                if (this._pendingStopValue <= 0)
+                {
+                    return this.currentAnim.completeAnimation(this);
+                }
+            }
+    
+            if (this.accumulator >= this.nextTick)
+            {
+                this.currentAnim.setFrame(this);
+                this.dirty=true;
+            }else{
+                this.dirty=false;
+            }
+        };
+        this.anims.update=update;
+        this.head.anims.update=update;
     }
 
     preUpdate(time, delta){
@@ -187,6 +217,7 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
         
         this.anims.update(time,delta);
         this.head.anims.update(time,delta);
+
         //if the frame has changed
         if(true){
             this.headoffset=this.anims.currentFrame.offset;
