@@ -1,14 +1,14 @@
 export class Chicken extends Phaser.Physics.Arcade.Sprite{
-    constructor(scene, x, y, skin){
+    constructor(scene, x=0, y=0, skin=0, combindex=0){
         super(scene, x, y, 'key');
 
         this.scene=scene;
         this.scene.add.existing(this);
         this.scene.physics.world.enable(this);
 
-        this.skin = skin;
+        this.skin=skin;
         this.head=scene.add.sprite(x+4,y,'pecksheet_head',0);
-        this.comb=scene.add.image(x+4, y, 'combs', 'comb_1');
+        this.comb=scene.add.image(x+4, y, 'combs', 'comb_'+combindex);
         this.head.preUpdate=()=>{};
         this.loadAnimations(skin);
 
@@ -61,6 +61,7 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
 
     loadAnimations(skin){
         //contains data about the locations of the neck and face
+        console.log(skin);
         let coords = this.scene.cache.json.get('chicken_coords');
         /**
          * standing animations
@@ -277,9 +278,6 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
         super.setDepth(depth);
         this.head.setDepth(depth);
         this.comb.setDepth(depth);
-    }
-    setAppearance(combindex){
-        this.comb.setFrame('comb_'+combindex);
     }
     setPipeline(){
 

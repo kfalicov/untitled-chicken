@@ -5,11 +5,6 @@ export class MainMenu extends Phaser.Scene{
         super('MainMenu');
     }
     preload(){
-        for(let i=0;i<5;i++){
-            this.load.atlas('chicken_body_'+i, 'assets/chicken/body_'+i+'.png', 'assets/chicken/body.json');
-            this.load.atlas('chicken_head_'+i, 'assets/chicken/head_'+i+'.png', 'assets/chicken/head.json');
-        }
-        this.load.atlas('combs', 'assets/chicken/combs.png', 'assets/chicken/combs.json');
         
     }
     selectChicken = function(chicken){
@@ -105,6 +100,7 @@ export class MainMenu extends Phaser.Scene{
     }
     create(){
         this.input.setPollAlways();
+        this.input.mouse.disableContextMenu();
 
         this.add.tileSprite(0,0,320,240,'key').setOrigin(0).setAlpha(0.5);
         let centerX = this.sys.canvas.width/2;

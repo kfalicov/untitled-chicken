@@ -1,5 +1,7 @@
 import { MainMenu } from './scenes/MainMenu.js';
 import {World} from './scenes/World.js';
+import {Loader} from './scenes/Loader.js';
+import {Map} from './scenes/Map.js';
 let gameScale=2;
 
 let config = {
@@ -25,16 +27,11 @@ let config = {
         }
     },
     //transparent: true,
-    //scene: ClassicMode //use this to test specific scenes directly
-    scene: [MainMenu, World]
+    scene: [Loader, World, Map] //use this to test specific scenes directly
+    //scene: [MainMenu, World]
 };
 
 window.addEventListener('resize', function (event) {
-    let scaleX = Math.floor(window.innerWidth/320);
-    let scaleY = Math.floor(window.innerHeight/240);
-    this.console.log(scaleX, scaleY);
-    let scale=Math.min(scaleX, scaleY);
-
     game.scale.setMaxZoom();
 }, false);
 

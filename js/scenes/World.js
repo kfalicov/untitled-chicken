@@ -51,12 +51,11 @@ export class World extends Phaser.Scene{
         let screenshadow = this.add.tileSprite(0,0,this.sys.canvas.width, this.sys.canvas.height,'black').setOrigin(0);
         this.weatherlayer = this.add.container();
         this.collisionlayer = this.add.container();
-        let player = new Chicken(this, 0,0,data.chickenColor);
+        let player = new Chicken(this, 0,0,data.chickenColor, data.chickenType);
         this.foreground = this.add.container();
         this.overlay = this.add.container();
         //player.emitter = stepEmitter;
         //player.setDepth(2);
-        player.setAppearance(data.chickenType);
         this.player=player;
 
         this.shadows = this.add.container().setVisible(false);
@@ -184,6 +183,9 @@ export class World extends Phaser.Scene{
             //this.pecking=true;
             player.isPecking=false;
          }, this);
+        this.input.on('gameout', function(){
+            player.isPecking=false;
+        }, this);
         
         this.activeTile=null;
         this.pointerXY = {x:0, y:0};
@@ -198,6 +200,8 @@ export class World extends Phaser.Scene{
 
         this.player.outline.setMask(new Phaser.Display.Masks.BitmapMask(this, this.foreground));
         this.overlay.add(this.player.outline);
+        this.scene.pause();
+        this.scene.launch("Map");
     }
 
     getChunk(x, y){
