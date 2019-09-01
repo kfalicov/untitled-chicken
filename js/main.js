@@ -28,7 +28,7 @@ let config = {
     },
     //transparent: true,
     scene: [Loader, World, Map] //use this to test specific scenes directly
-    //scene: [MainMenu, World]
+    //scene: [Loader, MainMenu, World, Map]
 };
 
 window.addEventListener('resize', function (event) {

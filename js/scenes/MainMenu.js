@@ -122,6 +122,8 @@ export class MainMenu extends Phaser.Scene{
         this.chickenGroup = chickenGroup;
         this.targetCircle = initialCircle;
         
+        let cursor = this.add.image(this.input.activePointer.x, this.input.activePointer.y, 'map_icons', 'hand_2').setOrigin(0.3).setDepth(2);
+        this.input.on('pointermove', (event)=>{cursor.setPosition(event.x, event.y)});
     }
     update(time, delta){
         let chickenGroup = this.chickenGroup;

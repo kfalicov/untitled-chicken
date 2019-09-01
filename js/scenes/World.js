@@ -12,24 +12,10 @@ export class World extends Phaser.Scene{
     {
         super('World');
     }
-    preload(){        
-        this.load.json('chicken_coords', 'assets/chicken_coords.json');
-        this.load.image('shadow', 'assets/chicken/shadow.png');
-        this.load.image('black', 'assets/black.png');
-        this.load.image('treetop', 'assets/terrain/treetop.png');
-        this.load.atlas('grass', 'assets/grass_tiles.png', 'assets/grass_tiles.json');
-        //this.load.image('tiles', 'assets/grass_tiles.png');
-        this.load.spritesheet('tiles_16', 'assets/terrain/16_terrain.png', { frameWidth: 16, frameHeight: 16 });
-        this.load.spritesheet('tiles', 'assets/tiles.png', { frameWidth: 32, frameHeight: 32 });
-        this.load.glsl('distort', 'js/shader/distort.frag', 'fragment');
-        this.load.glsl('reflect', 'js/shader/reflect.frag', 'fragment');
-        this.load.glsl('marblefrag', 'js/shader/marble.frag', 'fragment');
-        this.load.glsl('pad', 'js/shader/pad.vs', 'vertex');
-        this.load.glsl('paletteswap', 'js/shader/paletteswap.fs', 'fragment');
-        this.load.glsl('outline', 'js/shader/outline.fs', 'fragment');
-        this.load.image('clouds', 'assets/clouds2.png');
-        this.load.spritesheet('arrow', 'assets/arrow.png',{frameWidth:8, frameHeight:9});
-        this.load.spritesheet('particles', 'assets/particle.png',{frameWidth:16, frameHeight:16});
+    preload(){     
+        this.load.image('crystal', 'assets/crystal_7.png');  
+        
+        this.load.glsl('shaders', 'js/shader/shaders.glsl'); 
     }
     create(data){
         /**
@@ -198,10 +184,19 @@ export class World extends Phaser.Scene{
             this.cursor.setSelecting(selecting);
         })
 
+        this.input.keyboard.on('keydown-ESC', ()=>{
+            this.scene.pause();
+            this.scene.run("Map");
+        });
+
+        let crystal = this.add.shader('Crystal', 20, 20, 64,64);
+        crystal.setChannel0('crystal');
+        crystal.setChannel1('chickenTex');
+        this.crystal = crystal;
+        console.log(this.crystal.uniforms);
+
         this.player.outline.setMask(new Phaser.Display.Masks.BitmapMask(this, this.foreground));
         this.overlay.add(this.player.outline);
-        this.scene.pause();
-        this.scene.launch("Map");
     }
 
     getChunk(x, y){
@@ -254,6 +249,9 @@ export class World extends Phaser.Scene{
             }
         }
         this.cursor.update(time);
+        
+        this.crystal.setUniform('distance.value.x',this.player.x-this.crystal.x);
+        this.crystal.setUniform('distance.value.y',this.player.y-this.crystal.y);
     }
     updateChicken(time,delta){
         let accelval = 1500;
