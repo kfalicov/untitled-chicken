@@ -1,5 +1,3 @@
-
-
 export class MainMenu extends Phaser.Scene{
     constructor(){
         super('MainMenu');
@@ -27,11 +25,11 @@ export class MainMenu extends Phaser.Scene{
             duration:190
         });
     }
-    createWheel(chicken){
+    createWheel(chicken, choices){
         console.log('create wheel')
         let group = this.add.group();
         let timeline=this.tweens.createTimeline();
-        for(let i=0;i<5;i++){
+        for(let i=0;i<choices;i++){
             let newchicken = this.add.renderTexture(0,0,32,32).setOrigin(0.5).disableInteractive();
             newchicken.alpha=0;
             newchicken.setTintFill(0xffffff);
@@ -67,7 +65,7 @@ export class MainMenu extends Phaser.Scene{
                 newchicken.on('pointerdown', ()=>{
                     newchicken.setScale(1);
                     this.selectChicken(newchicken)
-                    this.chickenGroup = this.createWheel(newchicken)
+                    this.chickenGroup = this.createWheel(newchicken, 5);
                     let centerX = this.sys.canvas.width/2;
                     let centerY = this.sys.canvas.height/2;
                     
@@ -76,8 +74,8 @@ export class MainMenu extends Phaser.Scene{
                     Phaser.Actions.PlaceOnCircle(this.chickenGroup.getChildren(), newcircle);
                     this.targetCircle = newcircle;
                 });
-                newchicken.draw(this.textures.list['chicken_body_'+i].frames.stand_4,0,0);
-                newchicken.draw(this.textures.list['chicken_head_'+i].frames.stand_4,4,-2);
+                newchicken.drawFrame('chicken_body_'+i, 'stand_4');
+                newchicken.drawFrame('chicken_head_'+i, 'stand_4',4,-2);
             }
             
             group.add(newchicken);
@@ -106,8 +104,43 @@ export class MainMenu extends Phaser.Scene{
         let centerX = this.sys.canvas.width/2;
         let centerY = this.sys.canvas.height/2;
         let initialCircle = new Phaser.Geom.Circle(centerX, centerY,50);
-        
-        let chickenGroup = this.createWheel();
+
+        let chicken = this.add.shader('Palette').setVisible(false);
+        let colors = [
+            {x: 255/255., y: 255/255., z: 255/255.},
+            {x: 252/255., y: 193/255., z: 96/255.},
+            {x: 138/255., y: 58/255., z: 23/255.},
+            {x: 110/255., y: 101/255., z: 98/255.},
+            {x: 36/255., y: 25/255., z: 25/255.},
+        ]
+        let numberOfChickens = 7;
+        for(let i = colors.length; i<numberOfChickens; i++){
+            colors.push(
+                {x: Math.random(), y: Math.random(), z: Math.random()}
+            );
+        }
+        for(let i = 0;i<colors.length;i++){
+            chicken.setRenderToTexture('chicken_body_'+i, true);
+            chicken.setChannel0('chicken_body');
+            let atlas = this.cache.json.get('chicken_body');
+            let texture = this.textures.list['chicken_body_'+i];
+            Phaser.Textures.Parsers.JSONArray(texture, 0, atlas);
+            chicken.getUniform('color').value = colors[i];
+            chicken.renderWebGL(chicken.renderer, chicken);
+
+            chicken.renderToTexture = false;
+
+            chicken.setRenderToTexture('chicken_head_'+i, true);
+            chicken.setChannel0('chicken_head');
+            atlas = this.cache.json.get('chicken_head');
+            texture = this.textures.list['chicken_head_'+i];
+            Phaser.Textures.Parsers.JSONArray(texture, 0, atlas);
+            chicken.getUniform('color').value = colors[i];
+            chicken.renderWebGL(chicken.renderer, chicken);
+
+            chicken.renderToTexture = false;
+        }
+        let chickenGroup = this.createWheel(undefined, colors.length);
         
         Phaser.Actions.PlaceOnCircle(chickenGroup.getChildren(), initialCircle);
         this.currentAng = 0;

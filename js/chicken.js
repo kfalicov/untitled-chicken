@@ -1,5 +1,5 @@
 export class Chicken extends Phaser.Physics.Arcade.Sprite{
-    constructor(scene, x=0, y=0, skin=0, combindex=0){
+    constructor(scene, x=0, y=0, skin=undefined, combindex=0){
         super(scene, x, y, 'key');
 
         this.scene=scene;
@@ -61,19 +61,19 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
 
     loadAnimations(skin){
         //contains data about the locations of the neck and face
-        console.log(skin);
         let coords = this.scene.cache.json.get('chicken_coords');
         /**
          * standing animations
          */
+        let string = skin?'_'+skin:'';
         let sbody = this.scene.anims.create({
             key: 'stand_body_'+skin,
-            frames: this.scene.anims.generateFrameNames('chicken_body_'+skin, {prefix: 'stand_', start:0, end:4}),
+            frames: this.scene.anims.generateFrameNames('chicken_body'+string, {prefix: 'stand_', start:0, end:4}),
             frameRate: 12,
         });
         let shead = this.scene.anims.create({
             key: 'stand_head_'+skin,
-            frames: this.scene.anims.generateFrameNames('chicken_head_'+skin, {prefix: 'stand_', start:0, end:4}),
+            frames: this.scene.anims.generateFrameNames('chicken_head'+string, {prefix: 'stand_', start:0, end:4}),
             frameRate: 12,
         });
         for(let i=0;i<sbody.frames.length;i++){
@@ -85,12 +85,12 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
          */
         let pbody = this.scene.anims.create({
             key: 'peck_body_'+skin,
-            frames: this.scene.anims.generateFrameNames('chicken_body_'+skin, {prefix: 'peck_', start:0, end:4}),
+            frames: this.scene.anims.generateFrameNames('chicken_body'+string, {prefix: 'peck_', start:0, end:4}),
             frameRate: 30,
         });
         let phead = this.scene.anims.create({
             key: 'peck_head_'+skin,
-            frames: this.scene.anims.generateFrameNames('chicken_head_'+skin, {prefix: 'peck_', start:0, end:4}),
+            frames: this.scene.anims.generateFrameNames('chicken_head'+string, {prefix: 'peck_', start:0, end:4}),
             frameRate: 30,
         });
         for(let i=0;i<pbody.frames.length;i++){
@@ -106,12 +106,12 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
          */
         let wbody = this.scene.anims.create({
             key: 'walk_body_'+skin,
-            frames: this.scene.anims.generateFrameNames('chicken_body_'+skin, {prefix: 'walk_', frames:[0,1,0,2]}),
+            frames: this.scene.anims.generateFrameNames('chicken_body'+string, {prefix: 'walk_', frames:[0,1,0,2]}),
             frameRate: 15,
         });
         let whead = this.scene.anims.create({
             key: 'walk_head_'+skin,
-            frames: this.scene.anims.generateFrameNames('chicken_head_'+skin, {prefix: 'walk_', frames:[0,1,0,1]}),
+            frames: this.scene.anims.generateFrameNames('chicken_head'+string, {prefix: 'walk_', frames:[0,1,0,1]}),
             frameRate: 15,
         });
         for(let i=0;i<wbody.frames.length;i++){

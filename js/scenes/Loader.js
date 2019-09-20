@@ -3,10 +3,10 @@ export class Loader extends Phaser.Scene{
         super('Loader');
     }
     preload(){
-        for(let i=0;i<5;i++){
-            this.load.atlas('chicken_body_'+i, 'assets/chicken/body_'+i+'.png', 'assets/chicken/body.json');
-            this.load.atlas('chicken_head_'+i, 'assets/chicken/head_'+i+'.png', 'assets/chicken/head.json');
-        }
+        //for(let i=0;i<5;i++){
+            this.load.atlas('chicken_body', 'assets/chicken/body_'+0+'.png', 'assets/chicken/body.json');
+            this.load.atlas('chicken_head', 'assets/chicken/head_'+0+'.png', 'assets/chicken/head.json');
+        //}
         this.load.atlas('combs', 'assets/chicken/combs.png', 'assets/chicken/combs.json');
         
         this.load.atlas('map_icons', 'assets/map_icons.png', 'assets/map_icons.json');
@@ -27,8 +27,13 @@ export class Loader extends Phaser.Scene{
         this.load.image('clouds', 'assets/clouds2.png');
         this.load.spritesheet('arrow', 'assets/arrow.png',{frameWidth:8, frameHeight:9});
         this.load.spritesheet('particles', 'assets/particle.png',{frameWidth:16, frameHeight:16});
+    
+        this.load.glsl('shaders', 'js/shader/shaders.glsl'); 
     }
     create(){
+
+        
+
         this.scene.manager.scenes[1].scene.start();
     }
 }
