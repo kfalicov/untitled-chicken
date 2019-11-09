@@ -360,18 +360,26 @@ export class Ground{
             let renderDiameter = {x: this.renderDistance.x*2+1, y: this.renderDistance.y*2+1}
             if(origin.x < this.lastOrigin.x){
                 let topLeftChunk = createChunk(this.scene, origin.x-this.renderDistance.x, origin.y-this.renderDistance.y, this.chunks.pop());
-                for(let i=1;i<renderDiameter.y;i++){
-                    createChunk(this.scene, origin.x-this.renderDistance.x, origin.y-this.renderDistance.y+i, this.chunks[i*renderDiameter.x-1]);
-                }
                 this.chunks.unshift(topLeftChunk);
-            }else if(origin.x > this.lastOrigin.x){
                 for(let i=1;i<renderDiameter.y;i++){
-                    this.chunks[i*renderDiameter.y].destroy();
-                    var newChunk = createChunk(this.scene, origin.x+this.renderDistance.x, origin.y-this.renderDistance.y+i)
-                    //new Chunk(this, snappedChunkX+this.chunkRadius, snappedChunkY-this.chunkRadius+(i-1));
-                    this.chunks[i*renderDiameter.y] = newChunk;
+                    createChunk(this.scene, origin.x-this.renderDistance.x, origin.y-this.renderDistance.y+i, this.chunks[i*renderDiameter.x]);
                 }
+            }else if(origin.x > this.lastOrigin.x){
+                for(let i=0;i<renderDiameter.y-1;i++){
+                    createChunk(this.scene, origin.x+this.renderDistance.x, origin.y-this.renderDistance.y+i, this.chunks[(i+1)*renderDiameter.x])
+                }
+                console.log(this.chunks);
+                let bottomRightChunk = createChunk(this.scene, origin.x+this.renderDistance.x, origin.y+this.renderDistance.y, this.chunks.shift());
+                this.chunks.push(bottomRightChunk);
             }
+            // if(origin.y < this.lastOrigin.y){
+            //     for(let i=1;i<renderDiameter.y;i++){
+            //         this.chunks[i*renderDiameter.y].destroy();
+            //         var newChunk = createChunk(this.scene, origin.x+this.renderDistance.x, origin.y-this.renderDistance.y+i)
+            //         //new Chunk(this, snappedChunkX+this.chunkRadius, snappedChunkY-this.chunkRadius+(i-1));
+            //         this.chunks[i*renderDiameter.y] = newChunk;
+            //     }
+            // }
             // }else if(origin.x > this.lastOrigin.x){
             //     console.log('moved right');
             //     /* for(let i=1;i<chunkDiameter;i++){
