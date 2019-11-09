@@ -18,6 +18,9 @@ let config = {
     plugins: {
         
     },
+    fps: {
+        target: 12,
+    },
     title: 'chicken',
     physics: {
         default: 'arcade',
@@ -26,6 +29,7 @@ let config = {
             //debug:true
         }
     },
+    seed: 'test',
     //transparent: true,
     scene: [Loader, World, Map] //use this to test specific scenes directly
     //scene: [Loader, MainMenu, World, Map]

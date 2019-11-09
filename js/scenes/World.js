@@ -1,9 +1,14 @@
-import { Chunk } from "../terrain.js";
+import { Chunk, Ground } from "../terrain.js";
 import {AnimatedParticle} from "../particle.js";
 import { GrayscalePipeline, DistortPipeline, BloomPipeline, DistortPipeline2 } from "../shader/pipelines.js";
-import { Chicken } from "../chicken.js";
+import { Chicken } from "../objects/chicken.js";
 import Cursor from "../cursor.js";
 import {WeatherSystem} from "../WeatherSystem.js";
+import { Coffin } from "../objects/coffin.js";
+import { Tree } from "../objects/tree.js";
+import { Centipede } from "../objects/centipede.js";
+import { Reaper } from "../objects/reaper.js";
+import Ship from "../objects/ship.js";
 
 let gameScale=2;
 
@@ -25,14 +30,18 @@ export class World extends Phaser.Scene{
         /**
          * initialize world
          */
-        this.chunkSize = 8;
-        this.tileSize = 32;
-        this.chunks = [];
-        this.currentChunk = {x:0,y:0};
-        this.chunkRadius = 1;
+        // this.chunkSize = 8;
+        // this.tileSize = 16;
+        // this.chunks = [];
+        // this.currentChunk = {x:0,y:0};
+        // this.chunkRadius = 2;
 
-        let chunkdiam = (2*this.chunkRadius)+1;
-        let tilesdiam = chunkdiam*this.chunkSize;
+        // let chunkdiam = (2*this.chunkRadius)+1;
+        // let tilesdiam = chunkdiam*this.chunkSize;
+
+        this.ground = new Ground(this, {x:0, y:0}, {x: 1, y:1});
+
+        console.log(this.ground.chunks);
 
         let weather = new WeatherSystem(this);
         this.weather=weather;
@@ -49,103 +58,47 @@ export class World extends Phaser.Scene{
         //player.setDepth(2);
         this.player=player;
 
-        /**
-         * ship stuff
-         */
-        let shipBase = this.add.image(0,0,'ship','ship_base');
-        let drawnRect = this.add.rectangle(shipBase.x-28, shipBase.y+8, 56, 16);
-        let points = Phaser.Geom.Rectangle.Decompose(drawnRect.getBounds());
-
-        drawnRect.isStroked = true;
+        //let coffin = new Coffin(-40, -10, this);
+        this.input.keyboard.on('keydown-Y', ()=>{
+        //    coffin.open();
+        //c.update();
+        });
+        //let tree = new Tree(30,-10, this);
+        //let tre2e = new Tree(100,-10, this);
+        //let tree3 = new Tree(170,-10, this);
+        //let reaper = new Reaper(0,0, this);
         
-        let particles = this.add.particles('smoke');
-        var well = {
-            active: true,
-            update: function(particle){
+        //this.ship = new Ship(0,0,this);
 
-                particle.velocityX = (Math.cos((particle.lifeCurrent/600)*Math.PI*6)*particle.maxVelocityX*1.5)*(1-particle.lifeT); 
-            }
-        }
-        particles.addGravityWell(well);
-        let boosters=[];
-        let emitters = [];
-        for(let i=0;i<4;i++){
-            let tex = 'booster_'+(i<2?'back':'front');
-            let booster= this.add.image(points[i].x-drawnRect.getCenter().x, points[i].y+drawnRect.getCenter().y,'ship', tex).setOrigin(0.5,0.6);
-            if(i==1||i==2){booster.flipX=true};
-            boosters.push(booster);
-
-            let emitter1 = particles.createEmitter({
-                frame: 0,
-                frequency: 20,
-                quantity: {min:1,max:2},
-                lifespan: {min:500, max:600},
-                speed:{min:120, max:150},
-                scale: {start: 1, end: 0.1},
-                maxVelocityX: {onEmit: ()=>{return Math.sign(Math.random()-0.5)*100}},
-                angle: { onEmit: ()=>{return booster.angle*5+(Math.random()*30)+75}},
-                rotate: { onEmit: ()=>{return (Math.random()*360)}},
-                timeScale:0.75
-            });
-            emitter1.startFollow(booster);
-            emitters.push(emitter1);
-            let emitter2 = particles.createEmitter({
-                frame: 1,
-                frequency: 50,
-                quantity: {min:3,max:4},
-                lifespan: {min:200, max:500},
-                speed:{min:100, max:200},
-                scale: {start: 1, end: 0.1},
-                maxVelocityX: {onEmit: ()=>{return Math.sign(Math.random()-0.5)*100}},
-                angle: { onEmit: ()=>{return booster.angle*5+(Math.random()*30)+75}},
-                rotate: { onEmit: ()=>{return (Math.random()*360)}},
-                timeScale:0.75
-            });
-            emitter2.startFollow(booster);
-            emitters.push(emitter2);
-            let emitter3 = particles.createEmitter({
-                frame: 2,
-                frequency: 80,
-                quantity: {min:4,max:6},
-                lifespan: {min:200, max:300},
-                speed:{min:100, max:200},
-                scale: {start: 1, end: 0.5},
-                maxVelocityX: {onEmit: ()=>{return Math.sign(Math.random()-0.5)*100}},
-                angle: { onEmit: ()=>{return booster.angle*5+(Math.random()*30)+75}},
-                rotate: { onEmit: ()=>{return (Math.random()*360)}},
-                timeScale:0.75
-            });
-            emitter3.startFollow(booster);
-            emitters.push(emitter3);
-        }
-        let ship = this.add.container(0,0,boosters);
-        ship.setSize(shipBase.width, shipBase.height);
-        ship.addAt(shipBase, 2);
-        ship.setPosition(0,-180);
-
-        ship.setInteractive();
-        this.input.setDraggable(ship);
-
-        drawnRect.setInteractive();
-        this.input.setDraggable(drawnRect);
-        
-        this.input.on('drag', function (pointer, gameObject, dragX, dragY) {
-
-            gameObject.x = dragX;
-            gameObject.y = dragY;
-            this.updateBoosters(boosters, ship, drawnRect);
-            this.updateEmitters(emitters);
-        }, this);
-
-        this.boosters = boosters;
-        this.emitters = emitters;
-        this.drawnRect = drawnRect;
-        this.ship = ship;
-        /**
-         * end ship stuff
-         */
         this.shadows = this.add.container().setVisible(false);
-        this.shadows.add(player.shadow);
+        //this.shadows.add([player.shadow, reaper.shadow]);
+
+        let fire = this.add.shader('Fire', -40, 0, 64, 64);
+        this.tweens.addCounter({
+            from: -180,
+            to: 180,
+            duration: 10000,
+            //yoyo: true,
+            repeat: -1,
+            onUpdate:(twen)=>{
+                fire.setUniform('angle.value', twen.getValue())
+                console.log(fire.getUniform('angle').value)
+            },
+            delay: 2500,
+            paused: true
+        })
+        // this.tweens.add({
+        //     targets: fire,
+        //     props: {
+        //         x: {value: '+=100', duration: 5000, yoyo: true, ease: 'Sine.easeInOut'},
+        //         y: {value: '+=100', duration: 5000, yoyo: true, delay: 2500, ease: 'Sine.easeInOut'},
+        //     },
+        //     repeat: -1,
+        // })
+        this.input.keyboard.on('keydown-O', ()=>{
+            fire.getUniform('angle').value+=90;
+        });
+        
 
         this.weatherlayer.add(player.reflection);
 
@@ -206,20 +159,20 @@ export class World extends Phaser.Scene{
        // this.cameras.main.setRenderToTexture('Distort');
         //groundlayer.putTilesAt(newChunk.arr,4,4);
         //console.log(newChunk.arr);
-        let chunkoffset=this.chunkSize*this.chunkRadius;
+        // let chunkoffset=this.chunkSize*this.chunkRadius;
 
-        for(let y = this.currentChunk.y-this.chunkRadius; y<=this.currentChunk.y+this.chunkRadius; y++){
-            for(let x = this.currentChunk.x-this.chunkRadius; x<=this.currentChunk.x+this.chunkRadius; x++){
-                var newChunk = new Chunk(this, x, y);
-                //newChunk.load();
-                //this.groundlayer.putTilesAt(newChunk.arr,chunkoffset+this.chunkSize*x, chunkoffset+this.chunkSize*y);
-                this.chunks.push(newChunk);
-                newChunk.load();
+        // for(let y = this.currentChunk.y-this.chunkRadius; y<=this.currentChunk.y+this.chunkRadius; y++){
+        //     for(let x = this.currentChunk.x-this.chunkRadius; x<=this.currentChunk.x+this.chunkRadius; x++){
+        //         var newChunk = new Chunk(this, x, y);
+        //         //newChunk.load();
+        //         //this.groundlayer.putTilesAt(newChunk.arr,chunkoffset+this.chunkSize*x, chunkoffset+this.chunkSize*y);
+        //         this.chunks.push(newChunk);
+        //         newChunk.load();
                 
-                this.background.add(newChunk.background.getChildren());
-                this.collisionlayer.add(newChunk.collision.getChildren());
-            }
-        }
+        //         this.background.add(newChunk.background.getChildren());
+        //         this.collisionlayer.add(newChunk.collision.getChildren());
+        //     }
+        // }
 
         /**
          * initialize player animations
@@ -229,15 +182,15 @@ export class World extends Phaser.Scene{
 
         this.cameras.main.setSize(320,240);
         
-        this.cameras.main.zoom=1;
+        //this.cameras.main.zoom=0.5;
         this.cameras.main.startFollow(player, true, 0.1, 0.1);
         //this.cameras.main.setRenderToTexture('Marble');
         
         //this.cameras.main.zoom=2;
         
-        for(let i=0;i<this.chunks.length;i++){
-            this.chunks[i].collider = this.physics.add.collider(player, this.chunks[i].collision);
-        }
+        // for(let i=0;i<this.chunks.length;i++){
+        //     this.chunks[i].collider = this.physics.add.collider(player, this.chunks[i].collision);
+        // }
         this.movement = this.input.keyboard.addKeys({
             up: 'W',
             left: 'A',
@@ -279,9 +232,13 @@ export class World extends Phaser.Scene{
         
         this.cursor = new Cursor(this, 0,0);
         this.cursor.setSelecting(selecting);
+        let tools = ['pick', 'axe', 'sword', 'pick_xl', 'axe_xl'];
+        let equip=0;
         this.input.on('wheel', ()=>{
             selecting = !selecting;
             this.cursor.setSelecting(selecting);
+            equip = (equip+1)%tools.length;
+            this.player.equip(tools[equip]);
         })
 
         this.input.keyboard.on('keydown-ESC', ()=>{
@@ -301,42 +258,6 @@ export class World extends Phaser.Scene{
 
         this.player.outline.setMask(new Phaser.Display.Masks.BitmapMask(this, this.foreground));
         this.overlay.add(this.player.outline);
-    }
-
-    normalize(array){
-        let max = array.reduce((a,b)=>{return Math.max(a,b)})+10;
-        let min = array.reduce((a,b)=>{return Math.min(a,b)})-10;
-        let result = [];
-        for (let val of array){
-            let ans = (val-min)/(max-min);
-            result.push(ans);
-        }
-        return result;
-    }
-
-    updateBoosters(boosters, ship, drawnRect){
-        let points = Phaser.Geom.Rectangle.Decompose(drawnRect.getBounds());
-        let distances=[];
-        boosters.forEach((booster, index)=>{
-            let b_point = {x:booster.x+ship.x, y:booster.y+ship.y};
-            booster.rotation = Phaser.Math.Angle.Wrap(Phaser.Math.Angle.BetweenPoints(b_point, points[index])-Math.PI/2)*0.1;
-            //booster.angle=45;
-            distances.push(Math.floor(Phaser.Math.Distance.Between(b_point.x, b_point.y/2, drawnRect.x, drawnRect.y)));
-        });
-        let arr = this.normalize(distances);
-        boosters.forEach((booster, index)=>{
-            booster.y=arr[index]*10+(points[index].y-(drawnRect.y+drawnRect.height/3)-2)*(0.5+arr[index])+drawnRect.height+3;
-        });
-    }
-
-    updateEmitters(emitters){
-        for(let emitter of emitters){
-            emitter.followOffset = {
-                x: -Math.tan(emitter.follow.rotation)*50,
-                y: Math.cos(emitter.follow.rotation)*9,
-            }
-            emitter.setPosition(this.ship.x, this.ship.y);
-        }
     }
 
     getChunk(x, y){
@@ -376,16 +297,16 @@ export class World extends Phaser.Scene{
 
     update(time, delta){
         this.updateChicken(time, delta);
-        this.updateChunks(time, delta);
-        this.distortPipeline.setFloat1('time', time/10);
-        this.distortPipeline2.setFloat1('time', time/10);
-        this.marblePipeline.setFloat1('time', time/1000);
+        //this.updateChunks(time, delta);
+        // this.distortPipeline.setFloat1('time', time/10);
+        // this.distortPipeline2.setFloat1('time', time/10);
+        // this.marblePipeline.setFloat1('time', time/1000);
         this.scrollX-=0.15;
         this.scrollY-=0.02;
         this.clouds.tilePositionX=this.cameras.main.scrollX/2+this.scrollX;
         this.clouds.tilePositionY=this.cameras.main.scrollY/2+this.scrollY;
         this.weather.setPosition(this.cameras.main.worldView.x-64, this.cameras.main.worldView.y-64);
-        this.lineCast();
+        //this.lineCast();
         if(this.player.isPecking){
             if(this.activeTile!==null){
                 this.activeTile.setFrame(9);
@@ -393,12 +314,18 @@ export class World extends Phaser.Scene{
         }
         this.cursor.update(time);
         
-        this.drawnRect.x+=(this.ship.x-this.drawnRect.x)*.05;
-        this.updateBoosters(this.boosters, this.ship, this.drawnRect);
-        this.updateEmitters(this.emitters);
+        // this.drawnRect.x+=(this.ship.x-this.drawnRect.x)*.05;
+        // this.updateBoosters(this.boosters, this.ship, this.drawnRect);
+        // this.updateEmitters(this.emitters);
         
-        this.crystal.setUniform('distance.value.x',this.player.x-this.crystal.x);
-        this.crystal.setUniform('distance.value.y',this.player.y-this.crystal.y);
+        //this.crystal.setUniform('distance.value.x',this.player.x-this.crystal.x);
+        //this.crystal.setUniform('distance.value.y',this.player.y-this.crystal.y);
+
+        var chunkSize=32;
+        var tileSize=8;
+        var snappedChunkX = Math.floor(this.player.x/(chunkSize*tileSize));
+        var snappedChunkY = Math.floor(this.player.y/(chunkSize*tileSize));
+        this.ground.fetch({x: snappedChunkX, y: snappedChunkY});
     }
     updateChicken(time,delta){
         let accelval = 1500;

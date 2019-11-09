@@ -122,3 +122,135 @@ void main( void ) {
         gl_FragColor = col;
     }
 }
+
+---
+name: Cloth
+type: fragment
+author: Kyle Falicov
+---
+
+precision mediump float;
+uniform float     time;
+uniform vec2      resolution;
+uniform sampler2D iChannel0;
+varying vec2 fragCoord;
+
+void main( void ) {
+    vec2 p = (floor(fragCoord.xy)-0.5) / resolution.xy;
+    
+    //p.x += (sin((p.y*40.)+8.*time)*0.02)+(sin((p.y*75.)+16.*time)*0.03);
+    p.y = 1.-p.y;
+    float howFarDown = p.y/1.;
+    float howFarSides = 1.-(abs(0.5-p.x)/0.5);
+    float xWave = sin((p.y*11.)+1.5*time)*0.09;
+    float xWave2 = sin((p.x*1.8)+1.9*time)*0.02;
+    float xWave3 = sin((p.y*40.)+3.5*time)*0.04;
+    p.x += (xWave+xWave2+(xWave3*howFarSides))*howFarDown;
+    float yWave = sin((p.x*7.)+.9*time)*0.05;
+    float yWave2 = sin((p.x*20.)+4.*-time)*0.01;
+    float spikes = (abs(cos((p.x*10.)+2.*-time))-0.5)*0.09;
+    p.y += (yWave+yWave2+spikes)*howFarDown*howFarSides;
+    //p.y += (((sin((p.x*7.)+.5*time))*0.05)+((sin((p.x*20.)-4.*time))*0.01)+(((abs(cos((p.x*10.)+2.*-time))-0.5))*0.09))*(p.y/1.);
+    vec4 texColor = texture2D(iChannel0, p);
+    texColor.a = texColor.a>0.5? 1.: 0.;
+    gl_FragColor = texColor;
+}
+
+---
+name: Glitch
+type: fragment
+author: Kyle Falicov
+---
+
+precision mediump float;
+uniform float     time;
+uniform vec2      resolution;
+uniform sampler2D iChannel0;
+varying vec2 fragCoord;
+
+void main( void ) {
+    vec2 p = (floor(fragCoord.xy)-0.5) / resolution.xy;
+    
+    //p.x += (sin((p.y*40.)+8.*time)*0.02)+(sin((p.y*75.)+16.*time)*0.03);
+    p.y = 1.-p.y;
+    p.x+=sin((p.y*11.))*0.1;
+    vec4 texColor = texture2D(iChannel0, p);
+    texColor.a = texColor.a>0.5? 1.: 0.;
+    gl_FragColor = texColor;
+}
+
+---
+name: Fire
+type: fragment
+author: Kyle Falicov/Jeremy Mitchell
+uniform.angle: { "type": "1f", "value": -90 }
+---
+
+precision mediump float;
+varying vec2 fragCoord;
+uniform float     time;
+uniform vec2      resolution;
+uniform float angle;
+
+float hash2D(vec2 x) {
+	return fract(sin(dot(x, vec2(13.454, 7.405)))*12.3043);
+}
+
+//voronoi borrowed from someone. Probably iq? Sorry I forgot :(
+
+float voronoi2D(vec2 uv) {
+    vec2 fl = floor(uv);
+    vec2 fr = fract(uv);
+    float res = 1.0;
+    for( int j=-1; j<=1; j++ ) {
+        for( int i=-1; i<=1; i++ ) {
+            vec2 p = vec2(i, j);
+            float h = hash2D(fl+p);
+            vec2 vp = p-fr+h;
+            float d = dot(vp, vp);
+            
+            res +=1.0/pow(d, 8.0);
+        }
+    }
+    return pow( 1.0/res, 1.0/16.0 );
+}
+
+void main( void )
+{
+    float ang = angle*(3.14159/180.);
+
+	vec2 uv = (floor(fragCoord.xy)-0.5) / resolution.xy;
+    //uv = (rotation*vec4(uv, 0.,0.)).xy;
+    float fracX = 32./resolution.x;
+    float fracY = 32./resolution.y;
+    
+    mat2 rotation = mat2(vec2(cos(ang), -sin(ang)),
+                         vec2(sin(ang), cos(ang)));
+
+    vec2 direction = rotation*uv.yx;
+
+    //two scrolling voronoi maps. Could be a texture also
+    //voronoi 1 moves with vec2(0.,-time * 3.5)
+    //voronoi 2 moves with vec2(42.,-time * 1.1)
+    float up0 = voronoi2D(direction * vec2(6.0/fracX, 6.0/fracY) + vec2(0.,-time * 3.5)  );
+	float up1 = 0.25 + voronoi2D(direction * vec2(8.0/fracX, 8.0/fracY) + vec2(42.,-time * 1.4) + 30.0 );
+	//float finalMask = up0 * up1 + (1.0-uv.y);
+	float finalMask = up0 * up1;
+    //finalMask += 1.-length(falloff);
+    
+    //vertical gradient. In a game use vertex color or something.
+    //finalMask += (3.0-uv.y)* 0.25;
+    finalMask += 0.5-(direction-(rotation*vec2(0.5,0.5))).y;
+    
+    //horizontal gradient.
+    //finalMask *= 0.6-abs(uv.x - 0.5);
+    finalMask *= 1.0-abs((direction-(rotation*vec2(0.5,0.5))).x*2.5);
+    
+    vec4 dark = mix( vec4(0.0), vec4( 1.0, 0.4, 0.0, 0.9),  step(0.8,finalMask) ) ;
+    vec4 light = mix( dark, vec4( 1.0, 0.8, 0.0, 0.9),  step(0.95, finalMask) ) ;
+    
+    
+	gl_FragColor = light;
+    
+    //gl_FragColor = vec4(finalMask);
+}

@@ -17,6 +17,8 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
         this.chickenTex = this.scene.add.renderTexture(0,0,64,64).setVisible(false);
         this.chickenTex.saveTexture('chickenTex');
 
+        this.item = scene.add.image(x, y, 'tools', 'axe_xl').setOrigin(1.);
+
         this.reflection = scene.add.shader('reflect', x-1, y-5, 64,64).setOrigin(0.5,0);
         this.reflection.setChannel0('chickenTex');
 
@@ -27,6 +29,9 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
         this.headY;
         this.faceX;
         this.faceY;
+
+        this.itemX;
+        this.itemY;
 
         this.emitter=null;
 
@@ -43,6 +48,9 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
             this.outline.setPosition(this.x-1, this.y+1);
             this.reflection.setPosition(this.x-1, this.y-5);
             //this.emitter.setPosition(this.x, this.y+13);
+
+            this.item.x = this.x+this.itemX;
+            this.item.y = this.y+this.itemY+5;
         }
 
         this.body.useDamping = true;
@@ -221,11 +229,12 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
 
         //if the frame has changed
         if(true){
+            let flip = this.flipX+1;
             this.headoffset=this.anims.currentFrame.offset;
-            this.headX=(this.flipX+1)*this.headoffset.x;
+            this.headX=flip*this.headoffset.x;
             this.headY=this.headoffset.y;
             this.faceoffset=this.head.anims.currentFrame.offset;
-            this.faceX =(this.flipX+1)*(this.headoffset.x+this.faceoffset.x);
+            this.faceX =flip*(this.headoffset.x+this.faceoffset.x);
             this.faceY=this.headoffset.y+this.faceoffset.y;
             
             this.chickenTex.clear();
@@ -237,6 +246,9 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
             }else{
                 this.comb.visible=false;
             }
+
+            this.itemX = Math.min(flip, 0)*(-this.item.width)+(flip*2);
+            this.itemY = this.headoffset.y;
         }
         if(this.emitter !== null){
             if(!this.stepped){
@@ -269,6 +281,10 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
         this.headX=(this.flipX+1)*this.headoffset.x;
         this.faceX=(this.flipX+1)*(this.headoffset.x+this.faceoffset.x);
         this.shadow.setFlip(flipX, flipY);
+
+        this.item.setFlip(flipX, flipY);
+        
+        this.itemX=Math.min(flipX+1, 0)*(-this.item.width)+((flipX+1)*2);
     }
     setMask(mask){
         super.setMask(mask);
@@ -281,5 +297,8 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
     }
     setPipeline(){
 
+    }
+    equip(tool){
+        this.item.setFrame(tool);
     }
 }

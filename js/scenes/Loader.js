@@ -29,6 +29,16 @@ export class Loader extends Phaser.Scene{
         this.load.spritesheet('particles', 'assets/particle.png',{frameWidth:16, frameHeight:16});
     
         this.load.glsl('shaders', 'js/shader/shaders.glsl'); 
+        
+        this.load.atlas('tools', 'assets/tools.png', 'assets/tools.json');
+        this.load.atlas('coffin', 'assets/coffin.png', 'assets/coffin.json');
+        this.load.image('leaf', 'assets/terrain/leaf.png');
+        this.load.image('bush', 'assets/terrain/bush.png');
+        this.load.atlas('centipede', 'assets/enemy/centipede/centipede.png', 'assets/enemy/centipede/centipede.json');
+        this.load.atlas('reaper', 'assets/enemy/reaper/reaper.png', 'assets/enemy/reaper/reaper.json');
+        this.load.image('cloak', 'assets/parts/enemy/reaper/cloak2.png');
+        
+        this.load.spritesheet('tiles_8', 'assets/terrain/tiles_8.png', {frameWidth: 8, frameHeight: 8});
     }
     create(){
 
