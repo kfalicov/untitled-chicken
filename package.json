@@ -1,0 +1,32 @@
+{
+  "name": "untitled-chicken",
+  "version": "1.0.0",
+  "description": "Chicken game (Phaser 3 + TypeScript)",
+  "browser": true,
+  "scripts": {
+    "build": "webpack",
+    "dev": "webpack-dev-server"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kfalicov/untitled-chicken.git"
+  },
+  "author": "Kyle Falicov",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kfalicov/untitled-chicken/issues"
+  },
+  "homepage": "https://github.com/kfalicov/untitled-chicken#readme",
+  "dependencies": {
+    "phaser": "^3.21.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.0.0",
+    "@babel/preset-env": "^7.7.7",
+    "babel-loader": "^8.0.6",
+    "copy-webpack-plugin": "^5.1.1",
+    "webpack": "^4.41.5",
+    "webpack-cli": "^3.3.10",
+    "webpack-dev-server": "^3.10.1"
+  }
+}

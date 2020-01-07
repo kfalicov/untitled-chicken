@@ -16,19 +16,12 @@ export class Loader extends Phaser.Scene{
         this.load.image('treetop', 'assets/terrain/treetop.png');
         this.load.atlas('grass', 'assets/grass_tiles.png', 'assets/grass_tiles.json');
         //this.load.image('tiles', 'assets/grass_tiles.png');
-        this.load.spritesheet('tiles_16', 'assets/terrain/16_terrain.png', { frameWidth: 16, frameHeight: 16 });
         this.load.spritesheet('tiles', 'assets/tiles.png', { frameWidth: 32, frameHeight: 32 });
-        this.load.glsl('distort', 'js/shader/distort.frag', 'fragment');
-        this.load.glsl('reflect', 'js/shader/reflect.frag', 'fragment');
-        this.load.glsl('marblefrag', 'js/shader/marble.frag', 'fragment');
-        this.load.glsl('pad', 'js/shader/pad.vs', 'vertex');
-        this.load.glsl('paletteswap', 'js/shader/paletteswap.fs', 'fragment');
-        this.load.glsl('outline', 'js/shader/outline.fs', 'fragment');
         this.load.image('clouds', 'assets/clouds2.png');
         this.load.spritesheet('arrow', 'assets/arrow.png',{frameWidth:8, frameHeight:9});
         this.load.spritesheet('particles', 'assets/particle.png',{frameWidth:16, frameHeight:16});
     
-        this.load.glsl('shaders', 'js/shader/shaders.glsl'); 
+        this.load.glsl('shaders', 'assets/shaders/shaders.glsl'); 
         
         this.load.atlas('tools', 'assets/tools.png', 'assets/tools.json');
         this.load.atlas('coffin', 'assets/coffin.png', 'assets/coffin.json');
@@ -39,6 +32,11 @@ export class Loader extends Phaser.Scene{
         this.load.image('cloak', 'assets/parts/enemy/reaper/cloak2.png');
         
         this.load.spritesheet('tiles_8', 'assets/terrain/tiles_8.png', {frameWidth: 8, frameHeight: 8});
+        this.load.spritesheet('tiles_16', 'assets/terrain/tiles_16.png', { frameWidth: 16, frameHeight: 16 });
+
+        this.load.image('oak_treetop', 'assets/terrain/oak_treetop.png');
+        this.load.spritesheet('oak_trunk', 'assets/terrain/oak_trunk.png', { frameWidth: 16, frameHeight: 16 });
+        this.load.image('oak_wood_drop', 'assets/drops/wood.png');
     }
     create(){
 

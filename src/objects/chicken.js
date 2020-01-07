@@ -19,11 +19,11 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
 
         this.item = scene.add.image(x, y, 'tools', 'axe_xl').setOrigin(1.);
 
-        this.reflection = scene.add.shader('reflect', x-1, y-5, 64,64).setOrigin(0.5,0);
-        this.reflection.setChannel0('chickenTex');
+        //this.reflection = scene.add.shader('reflect', x-1, y-5, 64,64).setOrigin(0.5,0);
+        //this.reflection.setChannel0('chickenTex');
 
-        this.outline = scene.add.shader('outline', x, y, 64,64);
-        this.outline.setChannel0('chickenTex');
+        //this.outline = scene.add.shader('outline', x, y, 64,64);
+        //this.outline.setChannel0('chickenTex');
 
         this.headX;
         this.headY;
@@ -45,8 +45,8 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
             this.comb.x=this.x+this.faceX;
             this.comb.y=this.y+this.faceY;
             this.shadow.setPosition(this.x,this.y);
-            this.outline.setPosition(this.x-1, this.y+1);
-            this.reflection.setPosition(this.x-1, this.y-5);
+            //this.outline.setPosition(this.x-1, this.y+1);
+            //this.reflection.setPosition(this.x-1, this.y-5);
             //this.emitter.setPosition(this.x, this.y+13);
 
             this.item.x = this.x+this.itemX;
@@ -250,7 +250,7 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
             this.itemX = Math.min(flip, 0)*(-this.item.width)+(flip*2);
             this.itemY = this.headoffset.y;
         }
-        if(this.emitter !== null){
+        if(this.emitter !== null && this.emitter !== undefined){
             if(!this.stepped){
                 if(this.anims.getCurrentKey()==='walk_body_'+skin){
                     if(this.anims.currentFrame.index==1){

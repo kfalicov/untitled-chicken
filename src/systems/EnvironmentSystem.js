@@ -1,6 +1,15 @@
 import { DropSplash } from "./particle.js";
 
-export class WeatherSystem{
+/** an all in one system that manages 
+ * day/night, 
+ * weather, and 
+ * atmosphere */
+export class EnvironmentSystem{
+    /**Environment system needs:
+     * the shadow layer, 
+     * the ground effect layer, 
+     * the foreground effect layer, and
+     * the lighting layer */
     constructor(scene){
         this.particles = scene.add.particles('particles');
         let screenRect=new Phaser.Geom.Rectangle(0,0,scene.sys.canvas.width+128, scene.sys.canvas.height+128);
@@ -14,7 +23,7 @@ export class WeatherSystem{
             alpha: {start:0.2,end:0.0},
             scaleX:{start:1, end:2},
             scaleY:{start:0.3,end:0.6},
-            on:false,
+            on:true,
             emitZone: {type: 'random', source:screenRect},
             particleClass: DropSplash,
             blendMode: 'ADD',
@@ -31,6 +40,19 @@ export class WeatherSystem{
             particleClass: DropSplash,
             blendMode: 'ADD',
         });
+
+        var slider = document.createElement("input");
+        slider.setAttribute("type", "range");
+        slider.setAttribute("min", "0");
+        slider.setAttribute("max", "100");
+        slider.setAttribute("value", "0");
+
+        document.body.appendChild(slider);
+        slider.onchange=()=>{
+            console.log('changed')
+        }
+
+        //var element = scene.add.dom(10,10,slider);
     }
     getBackground(){
         return this.particles;
