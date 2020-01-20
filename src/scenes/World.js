@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import server from '../server';
 import { Ground } from '../terrain.js';
 import { Chicken } from '../objects/chicken.js';
 import { EnvironmentSystem } from '../systems/EnvironmentSystem.js';
@@ -29,8 +30,9 @@ export class World extends Phaser.Scene {
     const weather = new EnvironmentSystem(this);
     this.weather = weather;
 
-    this.groundEffects = this.add.container();
+   
     const screenshadow = this.add.tileSprite(0, 0, this.sys.canvas.width, this.sys.canvas.height, 'black').setOrigin(0);
+    this.groundEffects = this.add.container();
     this.weatherlayer = this.add.container();
 
     this.collisionlayer = this.add.container();
@@ -79,6 +81,11 @@ export class World extends Phaser.Scene {
     this.input.keyboard.on('keydown-O', () => {
       // fire.getUniform('angle').value+=90;
       tree.knock(10);
+    });
+    /** multiplayer */
+    this.input.keyboard.on('keydown-P', () => {
+      console.log("hosted server");
+      //server('this');
     });
 
     // this.weatherlayer.add(player.reflection);

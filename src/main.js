@@ -40,4 +40,3 @@ window.addEventListener('resize', function (event) {
 }, false);
 
 export const game = new Phaser.Game(config);
-

@@ -8,8 +8,11 @@ module.exports = {
     vendors: ['phaser'],
   },
   output: {
-    filename: 'app.bundle.js',
+    filename: '[name].bundle.js',
     path: path.resolve(__dirname, 'build'),
+  },
+  node:{
+    fs: 'empty',
   },
   module: {
     rules: [
@@ -23,7 +26,7 @@ module.exports = {
         },
         include: path.resolve(__dirname, 'src/'),
         exclude: /node_modules/,
-      },
+      }
     ],
   },
 
@@ -31,7 +34,13 @@ module.exports = {
 
   devServer: {
     contentBase: path.resolve(__dirname, 'build'),
-    https: true,
+    host: '0.0.0.0',
+    port: 8080,
+    //https: true,
+    overlay: {
+      //warnings: true,
+      errors: true
+    },
   },
 
   plugins: [
@@ -42,6 +51,10 @@ module.exports = {
       },
       {
         from: path.resolve(__dirname, 'assets', '**', '*'),
+        to: path.resolve(__dirname, 'build'),
+      },
+      {
+        from: path.resolve(__dirname, 'css', '**', '*'),
         to: path.resolve(__dirname, 'build'),
       },
     ]),

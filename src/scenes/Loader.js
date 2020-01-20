@@ -1,3 +1,4 @@
+
 export class Loader extends Phaser.Scene{
     constructor(){
         super('Loader');
@@ -39,9 +40,6 @@ export class Loader extends Phaser.Scene{
         this.load.image('oak_wood_drop', 'assets/drops/wood.png');
     }
     create(){
-
-        
-
         this.scene.manager.scenes[1].scene.start();
     }
 }

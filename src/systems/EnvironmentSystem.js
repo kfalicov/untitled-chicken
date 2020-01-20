@@ -28,28 +28,30 @@ export class EnvironmentSystem{
             particleClass: DropSplash,
             blendMode: 'ADD',
         });
-        let stepEmitter = this.particles.createEmitter({
-            frame:2,
-            x:0, y:0,
-            speed:0,
-            lifespan: 800,
-            quantity:1,
-            alpha: {start:0.5, end:0.0},
-            scale:{start:1, end:2},
-            on:false,
-            particleClass: DropSplash,
-            blendMode: 'ADD',
-        });
+        // let stepEmitter = this.particles.createEmitter({
+        //     frame:2,
+        //     x:0, y:0,
+        //     speed:0,
+        //     lifespan: 800,
+        //     quantity:1,
+        //     alpha: {start:0.5, end:0.0},
+        //     scale:{start:1, end:2},
+        //     on:false,
+        //     particleClass: DropSplash,
+        //     blendMode: 'ADD',
+        // });
 
         var slider = document.createElement("input");
         slider.setAttribute("type", "range");
         slider.setAttribute("min", "0");
         slider.setAttribute("max", "100");
-        slider.setAttribute("value", "0");
+        slider.setAttribute("value", "100");
 
         document.body.appendChild(slider);
-        slider.onchange=()=>{
-            console.log('changed')
+        slider.oninput=()=>{
+            this.splashEmitter.setQuantity(Math.ceil(3*slider.value/100));
+            this.splashEmitter.setFrequency(110-slider.value)
+            console.log(Math.ceil(3 * slider.value / 100), 110- slider.value)
         }
 
         //var element = scene.add.dom(10,10,slider);
