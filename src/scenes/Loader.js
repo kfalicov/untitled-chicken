@@ -14,6 +14,7 @@ export class Loader extends Phaser.Scene{
         this.load.json('chicken_coords', 'assets/chicken_coords.json');
         this.load.image('shadow', 'assets/chicken/shadow.png');
         this.load.image('black', 'assets/black.png');
+        this.load.image('white', 'assets/white.png');
         this.load.image('treetop', 'assets/terrain/treetop.png');
         this.load.atlas('grass', 'assets/grass_tiles.png', 'assets/grass_tiles.json');
         //this.load.image('tiles', 'assets/grass_tiles.png');
@@ -23,6 +24,8 @@ export class Loader extends Phaser.Scene{
         this.load.spritesheet('particles', 'assets/particle.png',{frameWidth:16, frameHeight:16});
     
         this.load.glsl('shaders', 'assets/shaders/shaders.glsl'); 
+        this.load.glsl('perlin', 'assets/shaders/perlin.glsl'); 
+        this.load.glsl('lava', 'assets/shaders/lava.glsl'); 
         
         this.load.atlas('tools', 'assets/tools.png', 'assets/tools.json');
         this.load.atlas('coffin', 'assets/coffin.png', 'assets/coffin.json');

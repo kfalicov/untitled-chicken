@@ -20,40 +20,40 @@ export class World extends Phaser.Scene {
     this.load.spritesheet('smoke', 'assets/smoke.png', { frameWidth: 16, frameHeight: 16 });
   }
 
+  /**
+   * initialize world
+   */
   create(data) {
-    /**
-         * initialize world
-         */
+    
 
     // this.ground = new Ground(this, {x:0, y:0}, {x: 2, y:2});
-
-    const weather = new EnvironmentSystem(this);
-    this.weather = weather;
-
+    //let lava = this.add.shader('Lava', 0, 0, this.sys.canvas.width, this.sys.canvas.height).setOrigin(0);
+    //lava.setScrollFactor(0);
    
+    //this is the solid cover over the ground that gets masked to make each shadow a uniform color
     const screenshadow = this.add.tileSprite(0, 0, this.sys.canvas.width, this.sys.canvas.height, 'black').setOrigin(0);
-    this.groundEffects = this.add.container();
-    this.weatherlayer = this.add.container();
+    
+    //effects on the ground, such as raindrop splashes
+    const groundEffects = this.add.container();
 
     this.collisionlayer = this.add.container();
-    // console.log(data);
+
     const player = new Chicken(this, 0, 0, data.chickenColor, data.chickenType);
-    this.foreground = this.add.container();
-    this.overlay = this.add.container();
-    // player.emitter = stepEmitter;
-    // player.setDepth(2);
+
+    //effects in the foreground, such as rain particles
+    const foreground = this.add.container();
+
+    //tint and lighting over everything
+    const lighting = this.add.container();
+
+    //the player
     this.player = player;
 
-    // let coffin = new Coffin(-40, -10, this);
-    this.input.keyboard.on('keydown-Y', () => {
-      //    coffin.open();
-      // c.update();
-    });
+    //these are the objects that mask over the shadow on the ground
+    const shadows = this.add.container().setVisible(false);
+    shadows.add([player.shadow]);
 
-    // this.ship = new Ship(0,0,this);
-
-    this.shadows = this.add.container().setVisible(false);
-    this.shadows.add([player.shadow]);// , reaper.shadow]);
+    const weather = new EnvironmentSystem(this, screenshadow, shadows, groundEffects, foreground, lighting);
 
     const tree = new Tree(-30, -50, 0, this);
     // let fire = this.add.shader('Fire', -40, 0, 64, 64);
@@ -88,46 +88,36 @@ export class World extends Phaser.Scene {
       //server('this');
     });
 
-    // this.weatherlayer.add(player.reflection);
-
     screenshadow.alpha = 0.25;
     // screenshadow.setBlendMode(Phaser.BlendModes.MULTIPLY);
     screenshadow.setScrollFactor(0);
 
-    const shadowmask = new Phaser.Display.Masks.BitmapMask(this, this.shadows);
+    const shadowmask = new Phaser.Display.Masks.BitmapMask(this, shadows);
     screenshadow.setMask(shadowmask);
-
-    this.weatherlayer.add(weather.getBackground());
-    const clouds = this.add.tileSprite(0, 0, this.sys.canvas.width, this.sys.canvas.height, 'clouds');
-    clouds.setScrollFactor(0);
-    clouds.tileScaleX = 2;
-    clouds.tileScaleY = 2;
-
-    clouds.setOrigin(0);
-    this.scrollX = 0;
-    this.scrollY = 0;
-    this.shadows.add(clouds);
-
-    this.clouds = clouds;
 
     /**
          * initialize player animations
          */
 
     this.cameras.main.setBackgroundColor('#15AB49');
-
     this.cameras.main.setSize(320, 240);
 
     // this.cameras.main.zoom=0.5;
-    this.tweens.add({
-      targets: this.cameras.main,
-      zoom: 0.5,
-      yoyo: true,
-      repeat: -1,
-      ease: 'Sine.easeInOut',
-      paused: true,
-    });
+    // this.tweens.add({
+    //   targets: this.cameras.main,
+    //   zoom: 0.5,
+    //   yoyo: true,
+    //   repeat: -1,
+    //   ease: 'Sine.easeInOut',
+    //   paused: true,
+    // });
     this.cameras.main.startFollow(player, true, 0.1, 0.1);
+    this.cameras.main.setRenderToTexture();
+    this.cameras.main.on('prerender', (cam)=>{
+      if(typeof lava !== 'undefined')
+        lava.uniforms.scroll.value=cam.midPoint;
+      weather.clouds.uniforms.scroll.value=cam.midPoint;
+    })
 
     this.movement = this.input.keyboard.addKeys({
       up: 'W',
@@ -199,33 +189,11 @@ export class World extends Phaser.Scene {
 
   update(time, delta) {
     this.updateChicken(time, delta);
-    // this.distortPipeline.setFloat1('time', time/10);
-    // this.distortPipeline2.setFloat1('time', time/10);
-    // this.marblePipeline.setFloat1('time', time/1000);
-    this.scrollX -= 0.15;
-    this.scrollY -= 0.02;
-    this.clouds.tilePositionX = this.cameras.main.scrollX / 2 + this.scrollX;
-    this.clouds.tilePositionY = this.cameras.main.scrollY / 2 + this.scrollY;
-    this.weather.setPosition(this.cameras.main.worldView.x - 64, this.cameras.main.worldView.y - 64);
-
     if (this.player.isPecking) {
       if (this.activeTile !== null) {
         this.activeTile.setFrame(9);
       }
     }
-
-    // this.drawnRect.x+=(this.ship.x-this.drawnRect.x)*.05;
-    // this.updateBoosters(this.boosters, this.ship, this.drawnRect);
-    // this.updateEmitters(this.emitters);
-
-    // this.crystal.setUniform('distance.value.x',this.player.x-this.crystal.x);
-    // this.crystal.setUniform('distance.value.y',this.player.y-this.crystal.y);
-
-    const chunkSize = { x: 12, y: 9 };
-    const tileSize = 16;
-    const snappedChunkX = Math.floor(this.player.x / (chunkSize.x * tileSize));
-    const snappedChunkY = Math.floor(this.player.y / (chunkSize.y * tileSize));
-    // this.ground.fetch({x: snappedChunkX, y: snappedChunkY});
   }
 
   updateChicken(time, delta) {

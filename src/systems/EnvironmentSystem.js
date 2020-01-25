@@ -10,62 +10,78 @@ export class EnvironmentSystem{
      * the ground effect layer, 
      * the foreground effect layer, and
      * the lighting layer */
-    constructor(scene){
+    constructor(scene, shadowlayer, shadowcasters, groundeffects, foreground, lighting){
         this.particles = scene.add.particles('particles');
         let screenRect=new Phaser.Geom.Rectangle(0,0,scene.sys.canvas.width+128, scene.sys.canvas.height+128);
         this.splashEmitter = this.particles.createEmitter({
-            //frame:0,
-            x:0, y:0,
-            speed: 0,
             lifespan: 600,
             quantity:3,
             frequency:10,
             alpha: {start:0.2,end:0.0},
             scaleX:{start:1, end:2},
             scaleY:{start:0.3,end:0.6},
-            on:true,
             emitZone: {type: 'random', source:screenRect},
             particleClass: DropSplash,
             blendMode: 'ADD',
         });
-        // let stepEmitter = this.particles.createEmitter({
-        //     frame:2,
-        //     x:0, y:0,
-        //     speed:0,
-        //     lifespan: 800,
-        //     quantity:1,
-        //     alpha: {start:0.5, end:0.0},
-        //     scale:{start:1, end:2},
-        //     on:false,
-        //     particleClass: DropSplash,
-        //     blendMode: 'ADD',
-        // });
 
-        var slider = document.createElement("input");
-        slider.setAttribute("type", "range");
-        slider.setAttribute("min", "0");
-        slider.setAttribute("max", "100");
-        slider.setAttribute("value", "100");
+        let clouds = scene.add.shader('Perlin', 0, 0, scene.sys.canvas.width, scene.sys.canvas.height).setOrigin(0);
+        clouds.setScrollFactor(0);
+        shadowcasters.add(clouds);
+        
+        var rainslider = this.createSlider(0,100,100,"rain")
+        rainslider.oninput=({target:{value}})=>{
+            this.splashEmitter.setQuantity(Math.ceil(3 * value/100));
+            this.splashEmitter.setFrequency(110 - value)
 
-        document.body.appendChild(slider);
-        slider.oninput=()=>{
-            this.splashEmitter.setQuantity(Math.ceil(3*slider.value/100));
-            this.splashEmitter.setFrequency(110-slider.value)
-            console.log(Math.ceil(3 * slider.value / 100), 110- slider.value)
+            clouds.setUniform('density.value', value/100);
         }
 
-        //var element = scene.add.dom(10,10,slider);
+        // const clouds = scene.add.tileSprite(0, 0, scene.sys.canvas.width, scene.sys.canvas.height, 'clouds');
+
+        // clouds.setOrigin(0);
+        // shadows.add(clouds);
+
+        const sun = scene.add.tileSprite(0, 0, scene.sys.canvas.width, scene.sys.canvas.height, 'white').setOrigin(0);
+        sun.setScrollFactor(0);
+        sun.setBlendMode(Phaser.BlendModes.MULTIPLY);
+        sun.alpha=0.7;
+        lighting.add(sun);
+
+
+        var sunslider = this.createSlider(0, 100, 100, "day")
+        sunslider.oninput = ({ target: { value } }) => {
+            shadowlayer.alpha=value/100*0.25;
+            sun.setTintFill(this.getDaylight(value/100))
+        }
+        this.clouds=clouds;
     }
-    getBackground(){
-        return this.particles;
+    getDaylight(t){
+        const colors = [Phaser.Display.Color.HexStringToColor('#000333'),
+            Phaser.Display.Color.HexStringToColor('#E63A3C'),
+            Phaser.Display.Color.HexStringToColor('#E63A3A'),
+            Phaser.Display.Color.HexStringToColor('#ffffff')];
+        let i=t>0.5?2:0;
+        let val=t>0.5?t-0.5:t;
+        let h = Phaser.Math.Interpolation.SmoothStep(val * 2, colors[i].h, colors[i + 1].h);
+        let s = Phaser.Math.Interpolation.SmoothStep(val * 2, colors[i].s, colors[i + 1].s);
+        let v = Phaser.Math.Interpolation.SmoothStep(val * 2, colors[i].v, colors[i + 1].v);
+        let col = Phaser.Display.Color.HSVToRGB(h, s, v);
+        return Phaser.Display.Color.GetColor(col.r, col.g, col.b);
     }
-    getForeground(){
-        return null;
-    }
-    getClouds(){
-        return null;
-    }
-    setPosition(x, y){
-        this.splashEmitter.setPosition(x,y);
+    createSlider(min, max, current, text){
+        let slider = document.createElement("input");
+
+        slider.setAttribute("type", "range");
+        slider.setAttribute("min", min);
+        slider.setAttribute("max", max);
+        slider.setAttribute("value", current);
+
+        let label = document.createElement("label");
+        label.innerHTML=text;
+        label.appendChild(slider);
+        document.getElementById('debug').appendChild(label);
+
+        return slider;
     }
 }
