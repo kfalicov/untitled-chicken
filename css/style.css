@@ -6,5 +6,14 @@ html, body{
     justify-content: center;
 }
 canvas{
-    cursor:none;
+    /* cursor:none; */
+}
+
+#debug{
+    display: flex;
+    flex-direction: column;
+}
+label{
+    /* display: flex; */
+    align-items: center;
 }

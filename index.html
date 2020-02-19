@@ -2,18 +2,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <html>
 <head>
-    
     <link rel="stylesheet" href="css/reset.css" type="text/css" media="all">
     <link href="https://fonts.googleapis.com/css?family=Roboto|Roboto+Mono" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css" type="text/css" media="all">
-        
-    <script src="//cdn.jsdelivr.net/npm/phaser@3.20.1/dist/phaser.js"></script>
-    <script src="js/perlin.js"></script>
-    <script src="js/main.js" type="module"></script>
+        <title>Chicken Game</title>
+    <script src="vendors.bundle.js"></script>
+    <script src="app.bundle.js" defer></script>
 </head>
 <body>
-    <div class="container">
-        <canvas id="game"/>
+    <canvas id="game" ></canvas>
+    <div id="debug">
+    <form>
+        <label for="rain">Rain</label><input type="range" id="rain" min="0" max="100" value="0">
+        <br/>
+        <label for="time">Time</label><input type="range" id="time" min="0" max="100" value="100">
+        <br/>
+        <label for="zoom">Zoom</label><input type="range" id="zoom" min="0" max="2" value="1">
+    </form>
     </div>
 </body>
 </html>

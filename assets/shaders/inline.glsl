@@ -1,3 +1,9 @@
+---
+name: Inline
+type: fragment
+author: Kyle Falicov
+---
+
 precision mediump float;
 uniform float     time;
 uniform vec2      resolution;

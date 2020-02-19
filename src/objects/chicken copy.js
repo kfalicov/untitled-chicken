@@ -14,16 +14,16 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
 
         this.shadow = scene.add.image(x,y,'shadow');
 
-        this.chickenTex = this.scene.add.renderTexture(0,0,64,64).setVisible(false);
+        this.chickenTex = this.scene.add.renderTexture(0,0,64,64)//.setVisible(false);
         this.chickenTex.saveTexture('chickenTex');
 
         this.item = scene.add.image(x, y, 'tools', 'axe_xl').setOrigin(1.);
 
-        this.reflection = scene.add.shader('reflect', x-1, y-5, 64,64).setOrigin(0.5,0);
+        this.reflection = scene.add.shader('Reflect', x, y+64, 64,64).setOrigin(0.5,0);
         this.reflection.setChannel0('chickenTex');
 
-        this.outline = scene.add.shader('outline', x, y, 64,64);
-        this.outline.setChannel0('chickenTex');
+        //this.outline = scene.add.shader('outline', x, y, 64,64);
+        //this.outline.setChannel0('chickenTex');
 
         this.headX;
         this.headY;
@@ -45,8 +45,8 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
             this.comb.x=this.x+this.faceX;
             this.comb.y=this.y+this.faceY;
             this.shadow.setPosition(this.x,this.y);
-            this.outline.setPosition(this.x-1, this.y+1);
-            this.reflection.setPosition(this.x-1, this.y-5);
+            //this.outline.setPosition(this.x-1, this.y+1);
+            this.reflection.setPosition(this.x, this.y+16);
             //this.emitter.setPosition(this.x, this.y+13);
 
             this.item.x = this.x+this.itemX;
@@ -56,8 +56,8 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
         this.body.useDamping = true;
         this.body.setMaxSpeed(100);
         this.body.drag.set(0.9, 0.9);
-        this.body.setSize(26, 16);
-        this.body.setOffset(3, 14);
+        // this.body.setSize(26, 16);
+        // this.body.setOffset(3, 17);
 
         this.isMoving=false;
         this.isPecking=false;
@@ -238,7 +238,7 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
             this.faceY=this.headoffset.y+this.faceoffset.y;
             
             this.chickenTex.clear();
-            this.chickenTex.draw(this,32,32);
+            this.chickenTex.draw(this,32,47);
             this.chickenTex.draw(this.head, 32+this.headX, 32+this.headY);
             if(this.head.anims.getCurrentKey()!=='peck_head_'+skin){
                 this.comb.visible=true;
@@ -250,7 +250,7 @@ export class Chicken extends Phaser.Physics.Arcade.Sprite{
             this.itemX = Math.min(flip, 0)*(-this.item.width)+(flip*2);
             this.itemY = this.headoffset.y;
         }
-        if(this.emitter !== null){
+        if(this.emitter !== null && this.emitter !== undefined){
             if(!this.stepped){
                 if(this.anims.getCurrentKey()==='walk_body_'+skin){
                     if(this.anims.currentFrame.index==1){

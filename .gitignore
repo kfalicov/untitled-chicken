@@ -5,6 +5,8 @@ js/jsconfig.json
 *.map
 *.tlc
 assets/terrain/chicken tileset_16#files.txt
+js/
 parts/
 *.tlc
-*.tlc
+node_modules
+*.txm
