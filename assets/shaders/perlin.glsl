@@ -4,6 +4,7 @@ type: fragment
 author: Morgan McGuire @morgan3d, //http://graphicscodex.com
 uniform.density: { "type": "1f", "value": 0.5 }
 uniform.scroll: { "type": "2f", "value": {"x": 0, "y": 0} }
+uniform.zoom: { "type": "1f", "value": 1.0 }
 ---
 // By Morgan McGuire @morgan3d, http://graphicscodex.com
 // Reuse permitted under the BSD license.
@@ -116,6 +117,7 @@ float fbm(vec3 x) {
 
 uniform float density;
 uniform vec2 scroll;
+uniform float zoom;
 uniform float     time;
 uniform vec2      resolution;
 uniform sampler2D iChannel0;
@@ -123,8 +125,11 @@ varying vec2 fragCoord;
 
 void main( void ) {
 	float v = 0.0;
-    vec2 coord = (fragCoord.xy+(scroll)) * vec2(0.01, 0.03) - vec2(time * 0.08, resolution.y / 2.0 );
-    vec2 coord2 = (fragCoord.xy+(scroll)) * vec2(0.02, 0.04) - vec2(time * 0.02, time * 0.01);
+	// vec2 offset = ((resolution/2./zoom-fragCoord/zoom-scroll));
+	//this is what allows the shader to 'scale' with the camera motion
+	vec2 offset = (resolution/2.-fragCoord)/zoom-scroll;
+    vec2 coord = floor(offset) * vec2(0.01,0.02) - vec2(time * 0.08, 0. );
+    vec2 coord2 = floor(offset) * vec2(0.02, 0.04) - vec2(time * 0.02, time * 0.01);
     v = NOISE(coord)*NOISE(coord2);
 	v=v<density?1.:0.;
     gl_FragColor = vec4(v);

@@ -4,6 +4,7 @@ name: Lava
 type: fragment
 author: Kyle Falicov (with perlin from Morgan McGuire @morgan3d),
 uniform.density: { "type": "1f", "value": 0.3 }
+uniform.scroll: { "type": "2f", "value": {"x": 0, "y": 0} }
 ---
 // By Morgan McGuire @morgan3d, http://graphicscodex.com
 // Reuse permitted under the BSD license.
@@ -19,6 +20,7 @@ uniform.density: { "type": "1f", "value": 0.3 }
 
 precision mediump float;
 
+uniform vec2 scroll;
 uniform float density;
 uniform float     time;
 uniform vec2      resolution;
@@ -183,8 +185,8 @@ vec3 voronoi( vec3 uvw )
 
 void main( void ) {
 	vec3 v = vec3(0.0);
-    vec2 coord = fragCoord.xy * vec2(0.01, 0.02)- vec2(time * 0.04, resolution.y / 2.0 );
-    vec2 coord2 = fragCoord.xy * vec2(0.03, 0.06) - vec2(time * 0.1, time * 0.02);
+    vec2 coord = (fragCoord.xy+(scroll)) * vec2(0.01, 0.02)- vec2(time * 0.04, resolution.y / 2.0 );
+    vec2 coord2 = (fragCoord.xy+(scroll)) * vec2(0.03, 0.06) - vec2(time * 0.1, time * 0.02);
     //coord *= NOISE(coord2)*NOISE(coord);
 	//v = NOISE(coord)*NOISE(coord2);
 

@@ -4,6 +4,8 @@ import { Ground } from '../terrain.js';
 import { Chicken } from '../objects/chicken.js';
 import { EnvironmentSystem } from '../systems/EnvironmentSystem.js';
 import { Tree } from '../objects/tree.js';
+import { createEntity, followSystem } from '../systems/ecs';
+import Snake from '../objects/snake';
 
 export class World extends Phaser.Scene {
   constructor() {
@@ -27,11 +29,20 @@ export class World extends Phaser.Scene {
     
 
     // this.ground = new Ground(this, {x:0, y:0}, {x: 2, y:2});
-    //let lava = this.add.shader('Lava', 0, 0, this.sys.canvas.width, this.sys.canvas.height).setOrigin(0);
-    //lava.setScrollFactor(0);
+    // let lava = this.add.shader('Lava', this.sys.canvas.width / 2, this.sys.canvas.height / 2, this.sys.canvas.width, this.sys.canvas.height);
+    // lava.setScrollFactor(0);
+    let water = this.add.shader('Water', this.sys.canvas.width / 2, this.sys.canvas.height / 2, this.sys.canvas.width, this.sys.canvas.height);
+    water.setScrollFactor(0);
+
+    var segment = createEntity();
+    const fs = new followSystem();
+    fs.subscribe(segment);
    
     //this is the solid cover over the ground that gets masked to make each shadow a uniform color
-    const screenshadow = this.add.tileSprite(0, 0, this.sys.canvas.width, this.sys.canvas.height, 'black').setOrigin(0);
+    const shadowlayer = this.add.tileSprite(this.sys.canvas.width/2, this.sys.canvas.height/2, this.sys.canvas.width, this.sys.canvas.height, 'black');
+    shadowlayer.alpha = 0.25;
+    // screenshadow.setBlendMode(Phaser.BlendModes.MULTIPLY);
+    shadowlayer.setScrollFactor(0);
     
     //effects on the ground, such as raindrop splashes
     const groundEffects = this.add.container();
@@ -40,6 +51,8 @@ export class World extends Phaser.Scene {
 
     const player = new Chicken(this, 0, 0, data.chickenColor, data.chickenType);
 
+    const tree = new Tree(-30, -50, 0, this);
+    
     //effects in the foreground, such as rain particles
     const foreground = this.add.container();
 
@@ -48,14 +61,17 @@ export class World extends Phaser.Scene {
 
     //the player
     this.player = player;
+    // this.worm = new Snake(this);
 
     //these are the objects that mask over the shadow on the ground
-    const shadows = this.add.container().setVisible(false);
-    shadows.add([player.shadow]);
+    const shadowcasters = this.add.container().setVisible(false);
+    // shadows.add([player.shadow]);
 
-    const weather = new EnvironmentSystem(this, screenshadow, shadows, groundEffects, foreground, lighting);
+    const weather = new EnvironmentSystem(this, shadowlayer, shadowcasters, groundEffects, foreground, lighting);
 
-    const tree = new Tree(-30, -50, 0, this);
+    const shadowmask = new Phaser.Display.Masks.BitmapMask(this, shadowcasters);
+    shadowlayer.setMask(shadowmask);
+
     // let fire = this.add.shader('Fire', -40, 0, 64, 64);
     this.tweens.addCounter({
       from: -180,
@@ -88,13 +104,6 @@ export class World extends Phaser.Scene {
       //server('this');
     });
 
-    screenshadow.alpha = 0.25;
-    // screenshadow.setBlendMode(Phaser.BlendModes.MULTIPLY);
-    screenshadow.setScrollFactor(0);
-
-    const shadowmask = new Phaser.Display.Masks.BitmapMask(this, shadows);
-    screenshadow.setMask(shadowmask);
-
     /**
          * initialize player animations
          */
@@ -106,18 +115,41 @@ export class World extends Phaser.Scene {
     // this.tweens.add({
     //   targets: this.cameras.main,
     //   zoom: 0.5,
+    //   duration: 1000,
     //   yoyo: true,
     //   repeat: -1,
     //   ease: 'Sine.easeInOut',
-    //   paused: true,
+    //   paused: false,
     // });
-    this.cameras.main.startFollow(player, true, 0.1, 0.1);
-    this.cameras.main.setRenderToTexture();
-    this.cameras.main.on('prerender', (cam)=>{
-      if(typeof lava !== 'undefined')
-        lava.uniforms.scroll.value=cam.midPoint;
-      weather.clouds.uniforms.scroll.value=cam.midPoint;
-    })
+    var zoom = document.getElementById("zoom")
+    let zooms =[0.5,1,2.];
+    zoom.oninput = ({ target: { value } }) => {
+      this.cameras.main.zoom=zooms[value];
+    }
+    this.cameras.main.startFollow(player.body.center, true, 0.1, 0.1);
+
+    var _preRender = this.cameras.main.__proto__.preRender;
+    this.cameras.main.preRender = (resolution)=>{
+      _preRender.apply(this.cameras.main, [resolution]);
+
+      const {x, y} = this.cameras.main.midPoint;
+      let midpoint = { x, y: -y};
+      if (typeof lava !== 'undefined'){
+        lava.uniforms.scroll.value = midpoint;
+        lava.uniforms.zoom.value = this.cameras.main.zoom;
+        lava.scale = 1 / this.cameras.main.zoom;
+      }
+      if (typeof water !== 'undefined') {
+        water.uniforms.scroll.value = midpoint;
+        water.uniforms.zoom.value = this.cameras.main.zoom;
+        water.scale = 1 / this.cameras.main.zoom;
+      }
+      weather.clouds.uniforms.scroll.value = midpoint;
+      weather.clouds.uniforms.zoom.value = this.cameras.main.zoom;
+      shadowlayer.scale =1/this.cameras.main.zoom;
+      weather.clouds.scale =1/this.cameras.main.zoom;
+      weather.sun.scale = 1 / this.cameras.main.zoom;
+    }
 
     this.movement = this.input.keyboard.addKeys({
       up: 'W',
@@ -126,7 +158,6 @@ export class World extends Phaser.Scene {
       right: 'D',
     });
 
-    this.walking = false;
     const q = this.input.keyboard.addKey('Q');
     let intensity = 0;
     q.on('down', () => {
@@ -144,8 +175,7 @@ export class World extends Phaser.Scene {
 
     this.input.on('pointerdown', (pointer) => {
       // this.pecking=true;
-      player.isPecking = true;
-      player.clicked = true;
+      player.click();
     }, this);
     this.input.on('pointerup', (pointer) => {
       // this.pecking=true;
@@ -164,7 +194,7 @@ export class World extends Phaser.Scene {
     this.input.on('wheel', () => {
       selecting = !selecting;
       equip = (equip + 1) % tools.length;
-      this.player.equip(tools[equip]);
+      // this.player.equip(tools[equip]);
     });
 
     this.input.keyboard.on('keydown-ESC', () => {
@@ -188,16 +218,17 @@ export class World extends Phaser.Scene {
 
 
   update(time, delta) {
+    // this.worm.update()
     this.updateChicken(time, delta);
-    if (this.player.isPecking) {
-      if (this.activeTile !== null) {
-        this.activeTile.setFrame(9);
-      }
-    }
+    // if (this.player.isPecking) {
+    //   if (this.activeTile !== null) {
+    //     this.activeTile.setFrame(9);
+    //   }
+    // }
   }
 
   updateChicken(time, delta) {
-    const accelval = 1500;
+    const accelval = 1000;
     let forcex = 0;
     let forcey = 0;
     if (this.movement.up.isDown) {
@@ -213,19 +244,16 @@ export class World extends Phaser.Scene {
       forcex += accelval;
     }
     this.player.body.setAcceleration(forcex, forcey);
-    // let flip = Math.max(this.chicken.x-this.input.activePointer.x, 0);
-    // let flip = Math.max(this.chicken.x-this.cameras.main.midPoint.x, 0);
-    const chickenXreltoCenter = this.player.x - this.cameras.main.midPoint.x;
+
+    const chickenXreltoCenter = this.player.body.center.x - this.cameras.main.midPoint.x;
     const mouseXreltoCenter = this.input.activePointer.x - 160;
 
-    const flip = Math.sign(mouseXreltoCenter - chickenXreltoCenter);
-    this.player.setFlip(flip - 1, false);
+    //applies a scale operation based on the sign of the input
+    this.player.flipX(mouseXreltoCenter - chickenXreltoCenter);
 
     if (this.player.body.speed >= 40) {
-      this.walking = true;
       this.player.isMoving = true;
     } else {
-      this.walking = false;
       this.player.isMoving = false;
     }
   }

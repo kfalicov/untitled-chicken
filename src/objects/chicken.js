@@ -1,304 +1,260 @@
-export class Chicken extends Phaser.Physics.Arcade.Sprite{
+export class Chicken{
     constructor(scene, x=0, y=0, skin=undefined, combindex=0){
-        super(scene, x, y, 'key');
 
         this.scene=scene;
-        this.scene.add.existing(this);
-        this.scene.physics.world.enable(this);
+        
+        let legs = scene.add.sprite(0, 16, 'chicken_body')
+        let head = scene.add.sprite(4, 16, 'key');
+        let comb = scene.add.image(x + 4, y, 'combs', 0);
+        this.head = head;
+        this.legs = legs;
+        this.loadAnimations();
+        let container = scene.add.container(0, 0, [legs, head, comb]).setVisible(false);
+        
+        let texture = scene.add.renderTexture(-32,-32,64,64);
 
-        this.skin=skin;
-        this.head=scene.add.sprite(x+4,y,'pecksheet_head',0);
-        this.comb=scene.add.image(x+4, y, 'combs', 'comb_'+combindex);
-        this.head.preUpdate=()=>{};
-        this.loadAnimations(skin);
-
-        this.shadow = scene.add.image(x,y,'shadow');
-
-        this.chickenTex = this.scene.add.renderTexture(0,0,64,64).setVisible(false);
-        this.chickenTex.saveTexture('chickenTex');
-
-        this.item = scene.add.image(x, y, 'tools', 'axe_xl').setOrigin(1.);
-
-        //this.reflection = scene.add.shader('reflect', x-1, y-5, 64,64).setOrigin(0.5,0);
-        //this.reflection.setChannel0('chickenTex');
-
-        //this.outline = scene.add.shader('outline', x, y, 64,64);
-        //this.outline.setChannel0('chickenTex');
-
-        this.headX;
-        this.headY;
-        this.faceX;
-        this.faceY;
-
-        this.itemX;
-        this.itemY;
-
-        this.emitter=null;
-
-        /**
-         * this enables the head to move with the body, without being attached to the body
-         */
-        this.body.postUpdate = ()=>{
-            this.body.__proto__.postUpdate.call(this.body);
-            this.head.x=this.x+this.headX;
-            this.head.y=this.y+this.headY;
-            this.comb.x=this.x+this.faceX;
-            this.comb.y=this.y+this.faceY;
-            this.shadow.setPosition(this.x,this.y);
-            //this.outline.setPosition(this.x-1, this.y+1);
-            //this.reflection.setPosition(this.x-1, this.y-5);
-            //this.emitter.setPosition(this.x, this.y+13);
-
-            this.item.x = this.x+this.itemX;
-            this.item.y = this.y+this.itemY+5;
+        this.flipX = (flip)=>{
+            container.scaleX = Math.sign(flip);
         }
+        texture.draw(container);
+        
+        scene.physics.world.enable(texture);
+        
+        this.reflection = scene.add.shader('Reflect', x, y + 64, 64, 64).setOrigin(0.5, 0);
+        this.reflection.setChannel0(texture);
 
+        this.body = texture.body;
         this.body.useDamping = true;
         this.body.setMaxSpeed(100);
         this.body.drag.set(0.9, 0.9);
         this.body.setSize(26, 16);
-        this.body.setOffset(3, 14);
+        this.body.setOffset(19, 49);
+        
+        this.body.postUpdate = () => {
+            this.body.__proto__.postUpdate.call(this.body);
+            // this.shadow.setPosition(this.x, this.y);
+            //this.outline.setPosition(this.x-1, this.y+1);
+            this.reflection.setPosition(this.body.x+13, this.body.y+15);
+            //this.emitter.setPosition(this.x, this.y+13)
+        }
 
-        this.isMoving=false;
-        this.isPecking=false;
-        this.clicked=false;
-        this.play('stand_body_'+skin);
-        this.head.play('stand_head_'+skin);
-        this.stepped=false;
+        // legs.preUpdate = (time, delta)=>{
+        //     if (this.isMoving) {
+        //         if (this.isPecking) {
+        //             this.legs.play('walk_body_' + skin, true);
+        //             if (this.clicked) {
+        //                 this.clicked = false;
+        //                 this.head.play('peck_head_' + skin);
+        //             }
+        //             this.head.play('peck_head_' + skin, true);
+        //         } else {
+
+        //             this.legs.play('walk_body_' + skin, true);
+        //             //sync walking head with walking body when head stops pecking
+        //             if (this.head.anims.getCurrentKey() === 'peck_head_' + skin) {
+        //                 if (this.head.anims.getProgress() < 1 || (this.legs.anims.currentFrame.index % 2 == 0)) {
+        //                     //do nothing, wait for headbanging to finish and for sync frame
+        //                 } else {
+        //                     this.head.play('walk_head_' + skin);
+        //                     this.legs.play('walk_body_' + skin);
+        //                 }
+        //             } else {
+        //                 this.head.play('walk_head_' + skin, true);
+        //             }
+        //         }
+
+        //     } else {
+        //         if (this.isPecking) {
+        //             if (this.clicked) {
+        //                 this.clicked = false;
+        //                 this.head.play('peck_head_' + skin);
+        //                 this.legs.play('peck_body_' + skin);
+        //             }
+        //             this.head.play('peck_head_' + skin, true);
+        //             //sync pecking body with pecking head when stop walking
+        //             if (this.legs.anims.getCurrentKey() !== 'peck_body_' + skin) {
+        //                 if (this.head.anims.getProgress() < 1 || this.head.anims.accumulator + delta < this.head.anims.nextTick) {
+        //                     //do nothing, wait for headbanging to finish and for sync frame
+        //                     this.legs.play('walk_body_' + skin);
+        //                 } else {
+        //                     this.legs.play('peck_body_' + skin);
+        //                     this.head.play('peck_head_' + skin);
+        //                 }
+        //             } else {
+        //                 this.legs.play('peck_body_' + skin, true);
+        //             }
+        //         } else {
+        //             if (this.head.anims.getCurrentKey() === 'peck_head_' + skin) {
+        //                 if (this.head.anims.getProgress() < 1 || this.head.anims.accumulator + delta < this.head.anims.nextTick) {
+        //                     //do nothing, wait for headbanging to finish and for sync frame
+        //                 } else {
+        //                     this.legs.play('stand_body_' + skin);
+        //                     this.head.play('stand_head_' + skin);
+        //                 }
+        //             } else {
+        //                 this.legs.play('stand_body_' + skin, true);
+        //                 this.head.play('stand_head_' + skin, true);
+        //             }
+        //         }
+        //     }
+
+        //     this.legs.anims.update(time, delta);
+
+        //     //if the frame has changed
+        //     if (true) {
+        //         texture.clear();
+        //         texture.draw(container, 32,32);
+        //     }
+        //     if (this.emitter !== null && this.emitter !== undefined) {
+        //         if (!this.stepped) {
+        //             if (this.legs.anims.getCurrentKey() === 'walk_body_' + skin) {
+        //                 if (this.legs.anims.currentFrame.index == 1) {
+        //                     this.emitter.setPosition(this.x + 4 + this.body.deltaX(), this.y + 13 + this.body.deltaY());
+        //                     this.emitter.explode();
+        //                     this.stepped = true;
+        //                 } else if (this.legs.anims.currentFrame.index == 3) {
+        //                     this.emitter.setPosition(this.x - 4 + this.body.deltaX(), this.y + 13 + this.body.deltaY());
+        //                     this.emitter.explode();
+        //                     this.stepped = true;
+        //                 }
+        //             } else if (this.legs.anims.getCurrentKey() === 'stand_body_' + skin) {
+        //                 this.emitter.explode();
+        //                 this.stepped = true;
+        //             }
+        //         } else {
+        //             if (this.legs.anims.getCurrentKey() === 'walk_body_' + skin && this.legs.anims.currentFrame.index % 2 != 1) {
+        //                 this.stepped = false;
+        //             }
+        //         }
+        //     }
+        // }
+        this.click = ()=>{
+            head.play('peck_head');
+            this.isPecking = true;
+        }
+        legs.preUpdate = (time, delta)=>{
+            legs.anims.update(time, delta);
+            if (this.isMoving) {
+                legs.play('walk_body', true);
+            } else {
+                if (this.isPecking) {
+                    legs.play('peck_body', true);
+                } else { //standing
+                    legs.play('stand_body', true);
+                }
+            }
+        }
+        head.preUpdate = (time, delta) => {
+            head.anims.update(time, delta);
+            if (this.isMoving) {
+                head.play('walk_head', true);
+            } else {
+                if (this.isPecking) {
+                    head.play('peck_head', true);
+                } else { //standing
+                    head.play('stand_head', true);
+                }
+            }
+        }
+
+        let coords = this.scene.cache.json.get('chicken_coords');
+        legs.on('animationstart', (animation, frame)=>{
+            head.y = 19 + coords[animation.key][frame.index-1].y
+            texture.clear();
+            texture.draw(container, 32, 32);
+        })
+        legs.on('animationupdate', (animation, frame)=>{
+            head.y = 19 + coords[animation.key][frame.index-1].y
+            texture.clear();
+            texture.draw(container, 32, 32);
+        })
+        head.on('animationstart', (animation, frame)=>{
+            texture.clear();
+            texture.draw(container, 32, 32);
+        })
+        head.on('animationupdate', (animation, frame)=>{
+            texture.clear();
+            texture.draw(container, 32, 32);
+        })
+
+        legs.play('stand_body');
+        head.play('stand_head');
     }
 
-    loadAnimations(skin){
-        //contains data about the locations of the neck and face
-        let coords = this.scene.cache.json.get('chicken_coords');
+    loadAnimations(skin) {
         /**
          * standing animations
          */
-        let string = skin?'_'+skin:'';
+        let string = skin ? '_' + skin : '';
         let sbody = this.scene.anims.create({
-            key: 'stand_body_'+skin,
-            frames: this.scene.anims.generateFrameNames('chicken_body'+string, {prefix: 'stand_', start:0, end:4}),
+            key: 'stand_body',
+            frames: this.scene.anims.generateFrameNames('chicken_body' + string, { prefix: 'stand_', start: 0, end: 4 }),
             frameRate: 12,
         });
         let shead = this.scene.anims.create({
-            key: 'stand_head_'+skin,
-            frames: this.scene.anims.generateFrameNames('chicken_head'+string, {prefix: 'stand_', start:0, end:4}),
+            key: 'stand_head',
+            frames: this.scene.anims.generateFrameNames('chicken_head' + string, { prefix: 'stand_', start: 0, end: 4 }),
             frameRate: 12,
         });
-        for(let i=0;i<sbody.frames.length;i++){
-            sbody.frames[i].offset=coords.stand_neck[i];
-            shead.frames[i].offset=coords.stand_face[i];
-        }
         /**
          * pecking animations
          */
         let pbody = this.scene.anims.create({
-            key: 'peck_body_'+skin,
-            frames: this.scene.anims.generateFrameNames('chicken_body'+string, {prefix: 'peck_', start:0, end:4}),
+            key: 'peck_body',
+            frames: this.scene.anims.generateFrameNames('chicken_body' + string, { prefix: 'peck_', start: 0, end: 4 }),
             frameRate: 30,
         });
         let phead = this.scene.anims.create({
-            key: 'peck_head_'+skin,
-            frames: this.scene.anims.generateFrameNames('chicken_head'+string, {prefix: 'peck_', start:0, end:4}),
+            key: 'peck_head',
+            frames: this.scene.anims.generateFrameNames('chicken_head' + string, { prefix: 'peck_', start: 0, end: 4 }),
             frameRate: 30,
         });
-        for(let i=0;i<pbody.frames.length;i++){
-            pbody.frames[i].offset=coords.peck_neck[i];
-            phead.frames[i].offset=coords.peck_face[i];
-        }
-        pbody.frames[1].duration=10;
-        pbody.frames[4].duration=30;
-        phead.frames[1].duration=10;
-        phead.frames[4].duration=30;
+        pbody.frames[1].duration = 10;
+        pbody.frames[4].duration = 30;
+        phead.frames[1].duration = 10;
+        phead.frames[4].duration = 30;
         /**
          * walking animations
          */
         let wbody = this.scene.anims.create({
-            key: 'walk_body_'+skin,
-            frames: this.scene.anims.generateFrameNames('chicken_body'+string, {prefix: 'walk_', frames:[0,1,0,2]}),
+            key: 'walk_body',
+            frames: this.scene.anims.generateFrameNames('chicken_body' + string, { prefix: 'walk_', frames: [0, 1, 0, 2] }),
             frameRate: 15,
         });
         let whead = this.scene.anims.create({
-            key: 'walk_head_'+skin,
-            frames: this.scene.anims.generateFrameNames('chicken_head'+string, {prefix: 'walk_', frames:[0,1,0,1]}),
+            key: 'walk_head',
+            frames: this.scene.anims.generateFrameNames('chicken_head' + string, { prefix: 'walk_', frames: [0, 1, 0, 1] }),
             frameRate: 15,
         });
-        for(let i=0;i<wbody.frames.length;i++){
-            wbody.frames[i].offset=coords.walk_neck[i%2];
-            whead.frames[i].offset=coords.walk_face[i%2];
-            if(i%2!==0){
-                wbody.frames[i].duration=50;   
-                whead.frames[i].duration=50;
+        for (let i = 0; i < wbody.frames.length; i++) {
+            if (i % 2 !== 0) {
+                wbody.frames[i].duration = 50;
+                whead.frames[i].duration = 50;
             }
         }
-        this.headoffset = {x:0,y:0};
-        this.faceoffset = {x:0,y:0};
-        function update(time, delta)
-        {
-            if (!this.currentAnim || !this.isPlaying || this.currentAnim.paused)
-            {
+        function update(time, delta) {
+            if (!this.currentAnim || !this.isPlaying || this.currentAnim.paused) {
                 return;
             }
-    
+
             this.accumulator += delta * this._timeScale;
-    
-            if (this._pendingStop === 1)
-            {
+
+            if (this._pendingStop === 1) {
                 this._pendingStopValue -= delta;
-    
-                if (this._pendingStopValue <= 0)
-                {
+
+                if (this._pendingStopValue <= 0) {
                     return this.currentAnim.completeAnimation(this);
                 }
             }
-    
-            if (this.accumulator >= this.nextTick)
-            {
+
+            if (this.accumulator >= this.nextTick) {
                 this.currentAnim.setFrame(this);
-                this.dirty=true;
-            }else{
-                this.dirty=false;
+                this.dirty = true;
+            } else {
+                this.dirty = false;
             }
         };
-        this.anims.update=update;
-        this.head.anims.update=update;
-    }
-
-    preUpdate(time, delta){
-        let skin = this.skin;
-        if(this.isMoving){
-            if(this.isPecking){
-                this.play('walk_body_'+skin, true);
-                if(this.clicked){
-                    this.clicked=false;
-                    this.head.play('peck_head_'+skin);
-                }
-                this.head.play('peck_head_'+skin, true);
-            }else{
-                
-                this.play('walk_body_'+skin, true); 
-                //sync walking head with walking body when head stops pecking
-                if(this.head.anims.getCurrentKey()==='peck_head_'+skin){
-                    if(this.head.anims.getProgress()<1 || (this.anims.currentFrame.index%2==0)){
-                        //do nothing, wait for headbanging to finish and for sync frame
-                    }else{
-                        this.head.play('walk_head_'+skin);
-                        this.play('walk_body_'+skin);
-                    }
-                }else{
-                    this.head.play('walk_head_'+skin, true); 
-                }
-            }
-            
-        }else{
-            if(this.isPecking){
-                if(this.clicked){
-                    this.clicked=false;
-                    this.head.play('peck_head_'+skin);
-                    this.play('peck_body_'+skin);
-                }
-                this.head.play('peck_head_'+skin,true);
-                //sync pecking body with pecking head when stop walking
-                if(this.anims.getCurrentKey()!=='peck_body_'+skin){
-                    if(this.head.anims.getProgress()<1 || this.head.anims.accumulator+delta<this.head.anims.nextTick){
-                        //do nothing, wait for headbanging to finish and for sync frame
-                        this.play('walk_body_'+skin);
-                    }else{
-                        this.play('peck_body_'+skin);
-                        this.head.play('peck_head_'+skin);
-                    }
-                }else{
-                    this.play('peck_body_'+skin,true);
-                }
-            }else{
-                if(this.head.anims.getCurrentKey()==='peck_head_'+skin){
-                    if(this.head.anims.getProgress()<1 || this.head.anims.accumulator+delta<this.head.anims.nextTick){
-                        //do nothing, wait for headbanging to finish and for sync frame
-                    }else{
-                        this.play('stand_body_'+skin);
-                        this.head.play('stand_head_'+skin);
-                    }
-                }else{
-                    this.play('stand_body_'+skin,true);
-                    this.head.play('stand_head_'+skin,true);
-                }
-            }
-        }
-        
-        this.anims.update(time,delta);
-        this.head.anims.update(time,delta);
-
-        //if the frame has changed
-        if(true){
-            let flip = this.flipX+1;
-            this.headoffset=this.anims.currentFrame.offset;
-            this.headX=flip*this.headoffset.x;
-            this.headY=this.headoffset.y;
-            this.faceoffset=this.head.anims.currentFrame.offset;
-            this.faceX =flip*(this.headoffset.x+this.faceoffset.x);
-            this.faceY=this.headoffset.y+this.faceoffset.y;
-            
-            this.chickenTex.clear();
-            this.chickenTex.draw(this,32,32);
-            this.chickenTex.draw(this.head, 32+this.headX, 32+this.headY);
-            if(this.head.anims.getCurrentKey()!=='peck_head_'+skin){
-                this.comb.visible=true;
-                this.chickenTex.draw(this.comb, 32+this.faceX, 32+this.faceY)
-            }else{
-                this.comb.visible=false;
-            }
-
-            this.itemX = Math.min(flip, 0)*(-this.item.width)+(flip*2);
-            this.itemY = this.headoffset.y;
-        }
-        if(this.emitter !== null && this.emitter !== undefined){
-            if(!this.stepped){
-                if(this.anims.getCurrentKey()==='walk_body_'+skin){
-                    if(this.anims.currentFrame.index==1){
-                        this.emitter.setPosition(this.x+4+this.body.deltaX(), this.y+13+this.body.deltaY());
-                        this.emitter.explode();
-                        this.stepped=true;
-                    }else if(this.anims.currentFrame.index==3){
-                        this.emitter.setPosition(this.x-4+this.body.deltaX(), this.y+13+this.body.deltaY());
-                        this.emitter.explode();
-                        this.stepped=true; 
-                    }
-                }else if(this.anims.getCurrentKey()==='stand_body_'+skin){
-                    this.emitter.explode();
-                    this.stepped=true;
-                }
-            }else{
-                if(this.anims.getCurrentKey()==='walk_body_'+skin && this.anims.currentFrame.index%2!=1){
-                    this.stepped=false;
-                }
-            }
-        }
-    }
-    setFlip(flipX, flipY){
-        super.setFlip(flipX, flipY);
-        this.head.setFlip(flipX, flipY);
-        this.comb.setFlip(flipX, flipY);
-        
-        this.headX=(this.flipX+1)*this.headoffset.x;
-        this.faceX=(this.flipX+1)*(this.headoffset.x+this.faceoffset.x);
-        this.shadow.setFlip(flipX, flipY);
-
-        this.item.setFlip(flipX, flipY);
-        
-        this.itemX=Math.min(flipX+1, 0)*(-this.item.width)+((flipX+1)*2);
-    }
-    setMask(mask){
-        super.setMask(mask);
-        this.head.setMask(mask);
-    }
-    setDepth(depth){
-        super.setDepth(depth);
-        this.head.setDepth(depth);
-        this.comb.setDepth(depth);
-    }
-    setPipeline(){
-
-    }
-    equip(tool){
-        this.item.setFrame(tool);
+        this.legs.anims.update = update;
+        this.head.anims.update = update;
     }
 }

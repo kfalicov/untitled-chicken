@@ -25,7 +25,10 @@ export class Loader extends Phaser.Scene{
     
         this.load.glsl('shaders', 'assets/shaders/shaders.glsl'); 
         this.load.glsl('perlin', 'assets/shaders/perlin.glsl'); 
+        this.load.glsl('inline', 'assets/shaders/inline.glsl'); 
+        this.load.glsl('reflect', 'assets/shaders/reflect.glsl'); 
         this.load.glsl('lava', 'assets/shaders/lava.glsl'); 
+        this.load.glsl('water', 'assets/shaders/water.glsl'); 
         
         this.load.atlas('tools', 'assets/tools.png', 'assets/tools.json');
         this.load.atlas('coffin', 'assets/coffin.png', 'assets/coffin.json');

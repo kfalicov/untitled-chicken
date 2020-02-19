@@ -3,7 +3,6 @@ name: Lava
 type: fragment
 author: Kyle Falicov,
 uniform.scroll: { "type": "2f", "value": {"x": 0, "y": 0} }
-uniform.zoom: { "type": "1f", "value": 1.0 }
 ---
 // Perlin By Morgan McGuire @morgan3d, http://graphicscodex.com
 // Voronoi by Tomasz Dobrowolski' 2016,
@@ -13,7 +12,6 @@ uniform.zoom: { "type": "1f", "value": 1.0 }
 precision mediump float;
 
 uniform vec2 scroll;
-uniform float zoom;
 uniform float     time;
 uniform vec2      resolution;
 uniform sampler2D iChannel0;
@@ -25,7 +23,7 @@ varying vec2 fragCoord;
 #define EPSILON .0001
 
 // How far cells can go off center during animation (must be <= .5)
-#define ANIMATE_D .3
+#define ANIMATE_D 0.2
 
 // Precision-adjusted variations of https://www.shadertoy.com/view/4djSRW
 float hash(float p) { p = fract(p * 0.011); p *= p + 7.5; p *= p + p; return fract(p); }
@@ -70,35 +68,34 @@ float fbm(vec2 x) {
 	}
 	return v;
 }
-
-vec3 hash33(vec3 p3)
+vec2 hash22(vec2 p)
 {
-	p3 = fract(p3 * vec3(.1031, .1030, .0973));
-    p3 += dot(p3, p3.yxz+33.33);
-    vec3 o = fract((p3.xxy + p3.yxx)*p3.zyx);
+	vec3 p3 = fract(vec3(p.xyx) * vec3(.1031, .1030, .0973));
+    p3 += dot(p3, p3.yzx+33.33);
+    vec2 o = fract((p3.xx+p3.yz)*p3.zy);
     #ifdef ANIMATE
-        o = 0.5 + ANIMATE_D*sin( time*0.1 + 6.2831*o );
+        o = 0.5 + ANIMATE_D*sin( time*0.6 + 6.2831*o );
     #endif
     return o;
 }
-vec3 voronoi( in vec3 uvw )
+
+vec2 voronoi( in vec2 uv )
 {
-    vec3 n = floor(uvw);
-    vec3 f = fract(uvw);
+    vec2 n = floor(uv);
+    vec2 f = fract(uv);
 
     //----------------------------------
     // first pass: regular voronoi
     //----------------------------------
-	vec3 mr;
+	vec2 mr;
 
     float md = 8.0;
-    for( int k=-1; k<=1; k++ )
     for( int j=-1; j<=1; j++ )
     for( int i=-1; i<=1; i++ )
     {
-        vec3 g = vec3(float(i),float(j),float(k));
-		vec3 o = hash33( n + g );
-        vec3 r = g + o - f;
+        vec2 g = vec2(float(i),float(j));
+		vec2 o = hash22( n + g );
+        vec2 r = g + o - f;
         float d = dot(r,r);
 
         if( d<md )
@@ -112,34 +109,44 @@ vec3 voronoi( in vec3 uvw )
     // second pass: distance to borders
     //----------------------------------
     md = 8.0;
-    for( int k=-1; k<=1; k++ )
     for( int j=-1; j<=1; j++ )
     for( int i=-1; i<=1; i++ )
     {
-        vec3 g = vec3(float(i),float(j),float(k));
-		vec3 o = hash33( n + g );
-        vec3 r = g + o - f;
+        vec2 g = vec2(float(i),float(j));
+		vec2 o = hash22( n + g );
+        vec2 r = g + o - f;
 
         if( dot(mr-r,mr-r)>EPSILON )
         md = min( md, dot( 0.5*(mr+r), normalize(r-mr) ) );
     }
 
-    return vec3( md, mr );
+    return vec2( md+NOISE(uv), mr );
 }
 
+vec2 rotate(vec2 v, float a) {
+	float s = sin(a);
+	float c = cos(a);
+	mat2 m = mat2(c, -s, s, c);
+	return m * v;
+}
 
 void main( void ) {
-	vec3 v = vec3(0.0);
-    
-	vec2 offset = (resolution/2.-fragCoord)/zoom-scroll;
-    vec2 coord = floor(offset) * vec2(0.01, 0.02)- vec2(time * 0.04, resolution.y / 2.0 );
-    vec2 coord2 = floor(offset) * vec2(0.02, 0.04) - vec2(time * 0.15, time * 0.02);
-    //coord *= NOISE(coord2)*NOISE(coord);
-	//v = NOISE(coord)*NOISE(coord2);
+	vec2 v = vec2(0.0);
+    vec2 coord = (fragCoord.xy+(scroll)) * vec2(0.01, 0.06);//- vec2(time * 1.4, resolution.y / 2.0 );
+    vec2 coord2 = (fragCoord.xy+(scroll)) * vec2(0.03, 0.06);// - vec2(time * 0.1, time * 0.013);
 
-    v = voronoi(vec3(coord, time*0.06));
+    coord+=vec2(-(time*0.13),
+    // 0
+    0.5*(
+    sin(2.*coord.x)
+        //-2.*(sin(1.*coord.x)*sin(2.*coord.y-9.2))
+        )
+    );
+    coord=rotate(coord,1.131);
 
-	float fac = v.x+NOISE(coord2);
+    v = voronoi(coord);
+
+	float fac = v.x+NOISE(coord)-0.6;
 	//v=v<0.7?1.:0.;
 	vec4 yellow = vec4( 1., 0.827, 0.251, 1.0);     //FFD340
 	vec4 orange = vec4(1., 0.416, 0.239, 1.0);      //FF6A3D
@@ -151,6 +158,6 @@ void main( void ) {
         step(0.7,fac) ),  
         step(0.48,fac) ) ;
 
-    // gl_FragColor = vec4(fac);
+    gl_FragColor = vec4(fac);
     gl_FragColor = col;
 }
