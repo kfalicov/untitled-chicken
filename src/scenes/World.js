@@ -1,11 +1,13 @@
 import Phaser from 'phaser';
-import server from '../server';
 import { Ground } from '../terrain.js';
 import { Chicken } from '../objects/chicken.js';
 import { EnvironmentSystem } from '../systems/EnvironmentSystem.js';
 import { Tree } from '../objects/tree.js';
-import { createEntity, followSystem } from '../systems/ecs';
-import Snake from '../objects/snake';
+// import { createEntity, followSystem } from '../systems/ecs';
+// import Snake from '../objects/snake';
+import {socket} from '../systems/client';
+
+const MULTIPLAYER = true;
 
 export class World extends Phaser.Scene {
   constructor() {
@@ -31,12 +33,12 @@ export class World extends Phaser.Scene {
     // this.ground = new Ground(this, {x:0, y:0}, {x: 2, y:2});
     // let lava = this.add.shader('Lava', this.sys.canvas.width / 2, this.sys.canvas.height / 2, this.sys.canvas.width, this.sys.canvas.height);
     // lava.setScrollFactor(0);
-    let water = this.add.shader('Water', this.sys.canvas.width / 2, this.sys.canvas.height / 2, this.sys.canvas.width, this.sys.canvas.height);
-    water.setScrollFactor(0);
+    // let water = this.add.shader('Water', this.sys.canvas.width / 2, this.sys.canvas.height / 2, this.sys.canvas.width, this.sys.canvas.height);
+    // water.setScrollFactor(0);
 
-    var segment = createEntity();
-    const fs = new followSystem();
-    fs.subscribe(segment);
+    // var segment = createEntity();
+    // const fs = new followSystem();
+    // fs.subscribe(segment);
    
     //this is the solid cover over the ground that gets masked to make each shadow a uniform color
     const shadowlayer = this.add.tileSprite(this.sys.canvas.width/2, this.sys.canvas.height/2, this.sys.canvas.width, this.sys.canvas.height, 'black');
@@ -61,6 +63,34 @@ export class World extends Phaser.Scene {
 
     //the player
     this.player = player;
+    let sceneref = this; //for scoping issues
+    if(MULTIPLAYER){
+      const players = {};
+      socket.emit("join", "lobby_1", null, function(existingplayers){
+        console.log(existingplayers);
+        for(const p of existingplayers){
+          players[p] = new Chicken(sceneref, 0, 0, data.chickenColor, data.chickenType);
+        }
+      });
+      console.log(socket.id);
+      socket.on("new player", (id) => {
+        if(id===socket.id){
+          players[id] = player;
+        }else{
+          players[id] = new Chicken(this, 0, 0, data.chickenColor, data.chickenType);
+        }
+        console.log(id, "joined")
+      })
+      socket.on("remove player", (id) => {
+        players[id].destroy();
+        delete players[id];
+        console.log(id, "left")
+      })
+      socket.on("move player", (id, {x, y, forcex,forcey})=>{
+        players[id].move(forcex, forcey);
+      })
+    }
+
     // this.worm = new Snake(this);
 
     //these are the objects that mask over the shadow on the ground
@@ -97,11 +127,6 @@ export class World extends Phaser.Scene {
     this.input.keyboard.on('keydown-O', () => {
       // fire.getUniform('angle').value+=90;
       tree.knock(10);
-    });
-    /** multiplayer */
-    this.input.keyboard.on('keydown-P', () => {
-      console.log("hosted server");
-      //server('this');
     });
 
     /**
@@ -243,18 +268,13 @@ export class World extends Phaser.Scene {
     if (this.movement.right.isDown) {
       forcex += accelval;
     }
-    this.player.body.setAcceleration(forcex, forcey);
+    this.player.move(forcex, forcey);
+    socket.emit("player moved", {forcex, forcey});
 
     const chickenXreltoCenter = this.player.body.center.x - this.cameras.main.midPoint.x;
     const mouseXreltoCenter = this.input.activePointer.x - 160;
 
     //applies a scale operation based on the sign of the input
     this.player.flipX(mouseXreltoCenter - chickenXreltoCenter);
-
-    if (this.player.body.speed >= 40) {
-      this.player.isMoving = true;
-    } else {
-      this.player.isMoving = false;
-    }
   }
 }
