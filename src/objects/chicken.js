@@ -38,6 +38,25 @@ export class Chicken{
             //this.emitter.setPosition(this.x, this.y+13)
         }
 
+        this.destroy = ()=>{
+            container.destroy();
+            legs.destroy();
+            head.destroy();
+            comb.destroy();
+            texture.destroy();
+            this.reflection.destroy();
+        }
+
+        this.move=(fx,fy)=>{
+            this.body.setAcceleration(fx, fy);
+
+            if (this.body.speed >= 40) {
+                this.isMoving = true;
+            } else {
+                this.isMoving = false;
+            }
+        }
+
         // legs.preUpdate = (time, delta)=>{
         //     if (this.isMoving) {
         //         if (this.isPecking) {
