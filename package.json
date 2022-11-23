@@ -19,7 +19,7 @@
   "homepage": "https://github.com/kfalicov/untitled-chicken#readme",
   "dependencies": {
     "phaser": "^3.21.0",
-    "socket.io": "^2.3.0"
+    "socket.io": "^2.5.0"
   },
   "devDependencies": {
     "@babel/core": "^7.8.4",
